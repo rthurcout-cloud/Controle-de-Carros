@@ -16,7 +16,12 @@ async function kv(command) {
 }
 
 module.exports = async (req, res) => {
-  if (!KV_URL || !KV_TOKEN) { res.status(500).json({ error: 'kv_nao_configurado', dica: 'Crie um Vercel KV / Upstash e conecte ao projeto.' }); return; }
+  if (!KV_URL || !KV_TOKEN) {
+    // diagnóstico: mostra só os NOMES das variáveis relacionadas (nunca os valores/segredos)
+    const nomes = Object.keys(process.env).filter(k => /KV|REDIS|UPSTASH/i.test(k)).sort();
+    res.status(500).json({ error: 'kv_nao_configurado', vars_encontradas: nomes, dica: 'Conecte um KV/Upstash Redis ao projeto no Vercel e faça Redeploy.' });
+    return;
+  }
   try {
     if (req.method === 'GET') {
       const out = await kv(['GET', DATA_KEY]);
