@@ -1,0 +1,7 @@
+{
+  "name": "controle-de-carros",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Controle de manutenção da frota - PIB Niterói",
+  "engines": { "node": "22.x" }
+}

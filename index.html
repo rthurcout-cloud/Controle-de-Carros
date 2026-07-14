@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Controle de Carros — PIBN</title>
+<meta name="theme-color" content="#0f1115">
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+<style>
+  :root{
+    --bg:#0f1115; --surface:#1a1d24; --surface-2:#232733; --border:#2e3340;
+    --text:#e6e8ec; --muted:#9aa0ac; --accent:#4f7cff; --accent-soft:#22305e;
+    --green:#3ecf8e; --green-soft:#16331f; --amber:#f5b942; --amber-soft:#3a2e10;
+    --red:#ff6b6b; --red-soft:#3a1717; --radius:12px;
+  }
+  *{ box-sizing:border-box; margin:0; padding:0; }
+  body{ font-family:'Segoe UI',-apple-system,Roboto,Arial,sans-serif; background:var(--bg); color:var(--text); font-size:15px; }
+  a{ color:var(--accent); }
+  .app{ display:flex; min-height:100vh; }
+  /* Sidebar */
+  .side{ width:230px; background:var(--surface); border-right:1px solid var(--border); position:fixed; top:0; bottom:0; left:0; display:flex; flex-direction:column; padding:16px 12px; z-index:40; transition:transform .2s; }
+  .brand{ display:flex; align-items:center; gap:10px; padding:6px 8px 14px; }
+  .brand .ic{ font-size:24px; } .brand b{ font-size:15px; line-height:1.15; }
+  .nav-lbl{ color:var(--muted); font-size:11px; text-transform:uppercase; letter-spacing:.5px; margin:12px 8px 6px; }
+  .nav-item{ display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:10px; color:var(--text); cursor:pointer; font-size:14px; }
+  .nav-item:hover{ background:var(--surface-2); }
+  .nav-item.active{ background:var(--accent-soft); color:#fff; }
+  .side-foot{ margin-top:auto; font-size:12px; color:var(--muted); padding:10px 8px; }
+  /* Main */
+  .main{ flex:1; margin-left:230px; padding:26px 30px 50px; }
+  .topbar{ display:flex; align-items:center; gap:12px; margin-bottom:6px; }
+  .menu-btn{ display:none; background:var(--surface-2); border:1px solid var(--border); color:var(--text); width:40px; height:40px; border-radius:10px; font-size:20px; cursor:pointer; }
+  h1{ font-size:26px; } .page-sub{ color:var(--muted); font-size:14px; margin-bottom:20px; }
+  .sync{ margin-left:auto; font-size:12px; color:var(--muted); border:1px solid var(--border); border-radius:20px; padding:5px 12px; white-space:nowrap; }
+  /* Botões */
+  .btn{ background:var(--accent); color:#fff; border:none; padding:10px 16px; border-radius:10px; font-size:14px; font-weight:600; cursor:pointer; }
+  .btn:hover{ filter:brightness(1.08); }
+  .btn.secondary{ background:var(--surface-2); border:1px solid var(--border); color:var(--text); }
+  .btn.danger{ background:var(--red-soft); color:var(--red); }
+  .btn.small{ padding:7px 12px; font-size:13px; }
+  .toolbar{ display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-bottom:18px; }
+  /* Dashboard */
+  .dash{ display:grid; grid-template-columns:repeat(2,1fr); gap:16px; max-width:900px; }
+  .dcard{ background:var(--surface); border:1px solid var(--border); border-radius:16px; padding:26px 22px; cursor:pointer; transition:transform .12s, border-color .12s; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px; min-height:150px; text-align:center; }
+  .dcard:hover{ border-color:var(--accent); transform:translateY(-2px); }
+  .dcard .ic{ font-size:40px; } .dcard .t{ font-size:17px; font-weight:600; }
+  .dcard.big{ grid-column:1 / -1; align-items:stretch; text-align:left; padding:22px 26px; cursor:pointer; }
+  .dcard.big .lbl{ color:var(--muted); font-size:12px; text-transform:uppercase; letter-spacing:.5px; }
+  .dcard.big .carro{ font-size:24px; font-weight:800; margin:2px 0 14px; }
+  .revrow{ display:flex; gap:18px; flex-wrap:wrap; }
+  .revbox{ flex:1; min-width:150px; background:var(--surface-2); border-radius:12px; padding:14px 16px; }
+  .revbox .k{ color:var(--muted); font-size:12px; } .revbox .v{ font-size:22px; font-weight:700; margin-top:2px; }
+  .revbox.prox .v{ color:var(--amber); } .revbox.data .v{ color:var(--accent); }
+  /* Cards genéricos */
+  .grid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(250px,1fr)); gap:14px; }
+  .card{ background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:16px; }
+  .car-card{ cursor:pointer; transition:border-color .12s, transform .12s; border-left:4px solid var(--accent); }
+  .car-card:hover{ border-color:var(--accent); transform:translateY(-2px); }
+  .car-card .nome{ font-size:16px; font-weight:700; } .car-card .meta{ color:var(--muted); font-size:13px; margin-top:4px; }
+  .car-card .km{ margin-top:10px; font-size:13px; } .car-card .km b{ color:var(--accent); }
+  .chip{ display:inline-block; background:var(--surface-2); border:1px solid var(--border); border-radius:20px; padding:3px 10px; font-size:12px; margin:2px 4px 2px 0; }
+  .empty{ text-align:center; color:var(--muted); padding:50px 20px; } .empty .big{ font-size:44px; margin-bottom:8px; }
+  .section-label{ color:var(--muted); font-size:12px; text-transform:uppercase; letter-spacing:.5px; margin:18px 0 8px; }
+  /* Carro detail */
+  .car-head{ background:var(--surface); border:1px solid var(--border); border-radius:16px; padding:22px 24px; margin-bottom:18px; }
+  .car-head .n{ font-size:24px; font-weight:800; } .car-head .m{ color:var(--muted); margin-top:4px; }
+  .car-head .km{ margin-top:10px; }
+  .tabs{ display:flex; gap:10px; flex-wrap:wrap; margin-bottom:18px; }
+  .tabs .tb{ background:var(--surface-2); border:1px solid var(--border); color:var(--text); padding:12px 18px; border-radius:12px; cursor:pointer; font-weight:600; font-size:14px; }
+  .tabs .tb.on{ background:var(--accent); color:#fff; border-color:var(--accent); }
+  /* Tabela */
+  .tbl-wrap{ overflow-x:auto; border:1px solid var(--border); border-radius:var(--radius); }
+  table.t{ border-collapse:collapse; width:100%; min-width:560px; font-size:13.5px; }
+  table.t th, table.t td{ padding:10px 12px; border-bottom:1px solid var(--border); text-align:left; white-space:nowrap; }
+  table.t th{ background:var(--surface-2); color:var(--muted); position:sticky; top:0; }
+  table.t tr:hover td{ background:var(--surface-2); }
+  .totbar{ display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:14px 18px; margin-top:14px; }
+  .totbar .tot{ font-size:22px; font-weight:800; color:var(--green); }
+  /* Form / modal */
+  input, select, textarea{ background:var(--surface-2); border:1px solid var(--border); color:var(--text); padding:10px 12px; border-radius:9px; font-size:15px; font-family:inherit; width:100%; }
+  input:focus, select:focus, textarea:focus{ outline:none; border-color:var(--accent); }
+  .field{ margin-bottom:14px; } .field label{ display:block; font-size:13px; color:var(--muted); margin-bottom:5px; }
+  .row{ display:flex; gap:12px; flex-wrap:wrap; } .row .field{ flex:1; min-width:120px; }
+  .overlay{ position:fixed; inset:0; background:rgba(0,0,0,.6); display:none; align-items:flex-start; justify-content:center; padding:5vh 16px; z-index:60; overflow:auto; }
+  .overlay.open{ display:flex; }
+  .modal{ background:var(--surface); border:1px solid var(--border); border-radius:16px; padding:24px; width:100%; max-width:520px; }
+  .modal h2{ font-size:18px; margin-bottom:16px; }
+  .modal-actions{ display:flex; gap:10px; justify-content:flex-end; margin-top:20px; }
+  .hint{ color:var(--muted); font-size:13px; margin-top:8px; }
+  .linha{ display:flex; justify-content:space-between; font-size:14px; margin-top:8px; color:var(--muted); }
+  @media (max-width:820px){
+    .side{ transform:translateX(-100%); } .side.open{ transform:translateX(0); }
+    .main{ margin-left:0; padding:18px 16px 40px; } .menu-btn{ display:block; }
+    .dash{ grid-template-columns:1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="side" id="side">
+    <div class="brand"><span class="ic">🚗</span><b id="brandNome">Controle de Carros</b></div>
+    <div class="nav-lbl">Geral</div>
+    <div class="nav-item" data-view="home" onclick="navegar('home')"><span>🏠</span> Dashboard</div>
+    <div class="nav-item" data-view="carros" onclick="navegar('carros')"><span>🚗</span> Carros</div>
+    <div class="nav-item" data-view="oficinas" onclick="navegar('oficinas')"><span>🔧</span> Oficinas</div>
+    <div class="nav-item" data-view="relano" onclick="navegar('relano')"><span>📊</span> Relatório do Ano</div>
+    <div class="nav-lbl">Configurações</div>
+    <div class="nav-item" data-view="config" onclick="navegar('config')"><span>⚙️</span> Configurações</div>
+    <div class="side-foot">PIB Niterói · Frota</div>
+  </aside>
+
+  <main class="main">
+    <div class="topbar">
+      <button class="menu-btn" onclick="document.getElementById('side').classList.toggle('open')">☰</button>
+      <div style="flex:1"><h1 id="pgTitulo">Dashboard</h1></div>
+      <span class="sync" id="sync">Conectando…</span>
+    </div>
+    <div class="page-sub" id="pgSub">Controle de manutenção da frota.</div>
+
+    <section id="view-home" class="view"></section>
+    <section id="view-carros" class="view" style="display:none"></section>
+    <section id="view-carro" class="view" style="display:none"></section>
+    <section id="view-oficinas" class="view" style="display:none"></section>
+    <section id="view-relano" class="view" style="display:none"></section>
+    <section id="view-config" class="view" style="display:none"></section>
+  </main>
+</div>
+
+<!-- MODAL CARRO -->
+<div class="overlay" id="ovCarro"><div class="modal">
+  <h2 id="carTitulo">Novo carro</h2><input type="hidden" id="cId">
+  <div class="row">
+    <div class="field"><label>Fabricante</label><input id="cFab" placeholder="Ex: Volkswagen"></div>
+    <div class="field"><label>Modelo</label><input id="cMod" placeholder="Ex: Saveiro"></div>
+  </div>
+  <div class="row">
+    <div class="field"><label>Versão</label><input id="cVer" placeholder="Ex: Robust"></div>
+    <div class="field" style="flex:0 0 90px"><label>Ano</label><input id="cAno" type="number" placeholder="2026"></div>
+    <div class="field"><label>Cor</label><input id="cCor" placeholder="Ex: Branca"></div>
+  </div>
+  <div class="row">
+    <div class="field"><label>Placa</label><input id="cPla" placeholder="ABC-1D23"></div>
+    <div class="field"><label>Km atual</label><input id="cKm" type="number" placeholder="0"></div>
+    <div class="field"><label>Revisão a cada (km)</label><input id="cInt" type="number" placeholder="10000"></div>
+  </div>
+  <div class="modal-actions">
+    <button class="btn danger" id="btnExCarro" onclick="excluirCarro()" style="margin-right:auto;display:none">Excluir</button>
+    <button class="btn secondary" onclick="closeOv('ovCarro')">Cancelar</button>
+    <button class="btn" onclick="salvarCarro()">Salvar</button>
+  </div>
+</div></div>
+
+<!-- MODAL MANUTENÇÃO -->
+<div class="overlay" id="ovManut"><div class="modal">
+  <h2 id="manTitulo">Nova manutenção</h2><input type="hidden" id="mId"><input type="hidden" id="mCarro">
+  <div class="row">
+    <div class="field"><label>Data</label><input id="mData" type="date"></div>
+    <div class="field"><label>Km na hora</label><input id="mKm" type="number" placeholder="0"></div>
+  </div>
+  <div class="field"><label>Tipo de serviço</label><input id="mTipo" placeholder="Ex: Troca de óleo, freios, pneus, revisão..." list="tiposLista"><datalist id="tiposLista"></datalist></div>
+  <div class="field"><label>Oficina</label><select id="mOfic"></select></div>
+  <div class="field"><label>Peças / descrição</label><textarea id="mDesc" rows="2" placeholder="O que foi feito..."></textarea></div>
+  <div class="row">
+    <div class="field"><label>Valor (R$)</label><input id="mValor" type="number" step="0.01" placeholder="0,00"></div>
+  </div>
+  <div class="section-label">Próxima revisão (opcional)</div>
+  <div class="row">
+    <div class="field"><label>Próximo km</label><input id="mProxKm" type="number" placeholder="ex: 60000"></div>
+    <div class="field"><label>Data prevista</label><input id="mProxData" type="date"></div>
+  </div>
+  <div class="modal-actions">
+    <button class="btn danger" id="btnExManut" onclick="excluirManut()" style="margin-right:auto;display:none">Excluir</button>
+    <button class="btn secondary" onclick="closeOv('ovManut')">Cancelar</button>
+    <button class="btn" onclick="salvarManut()">Salvar</button>
+  </div>
+</div></div>
+
+<!-- MODAL OFICINA -->
+<div class="overlay" id="ovOfic"><div class="modal">
+  <h2 id="ofTitulo">Nova oficina</h2><input type="hidden" id="oId">
+  <div class="field"><label>Nome</label><input id="oNome" placeholder="Ex: Auto Center Central"></div>
+  <div class="row">
+    <div class="field"><label>Telefone</label><input id="oTel" placeholder="(21) 99999-0000"></div>
+    <div class="field"><label>Especialidade</label><input id="oEsp" placeholder="Ex: Mecânica geral"></div>
+  </div>
+  <div class="field"><label>Endereço</label><input id="oEnd" placeholder="Rua, número, bairro"></div>
+  <div class="field"><label>Observação</label><textarea id="oObs" rows="2"></textarea></div>
+  <div class="modal-actions">
+    <button class="btn danger" id="btnExOfic" onclick="excluirOfic()" style="margin-right:auto;display:none">Excluir</button>
+    <button class="btn secondary" onclick="closeOv('ovOfic')">Cancelar</button>
+    <button class="btn" onclick="salvarOfic()">Salvar</button>
+  </div>
+</div></div>
+
+<script>
+/* ================= Estado ================= */
+let db = { carros:[], oficinas:[], config:{} };
+let viewAtual='home', carroAbertoId=null, carroAba='manut';
+const TIPOS=['Troca de óleo','Filtros','Freios','Pneus','Alinhamento e balanceamento','Suspensão','Bateria','Revisão geral','Correia','Elétrica','Ar-condicionado','Lavagem'];
+
+/* ================= Helpers ================= */
+function uid(p){ return (p||'id')+Date.now().toString(36)+Math.floor(Math.random()*1e6).toString(36); }
+function esc(s){ return (s==null?'':(''+s)).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function money(v){ return 'R$ '+(+v||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}); }
+function fmtData(iso){ if(!iso) return '—'; const p=(''+iso).split('-'); return p.length===3?`${p[2]}/${p[1]}/${p[0]}`:iso; }
+function fmtKm(k){ if(k==null||k==='') return '—'; return (+k).toLocaleString('pt-BR')+' km'; }
+function hojeISO(){ const d=new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
+function anoAtual(){ return new Date().getFullYear(); }
+function carroById(id){ return db.carros.find(c=>c.id===id); }
+function oficById(id){ return db.oficinas.find(o=>o.id===id); }
+function nomeCarro(c){ return [c.fabricante,c.modelo,c.versao,c.ano,c.cor].filter(Boolean).join(' '); }
+function soDig(t){ return (t||'').replace(/\D/g,''); }
+function waLink(tel){ let d=soDig(tel); if(!d) return ''; if(d.length<=11 && !d.startsWith('55')) d='55'+d; return 'https://wa.me/'+d; }
+
+function proxRevisao(c){
+  const ms=(c.manutencoes||[]).slice().sort((a,b)=>(b.data||'').localeCompare(a.data||''));
+  const ult=ms[0]||null;
+  let proxKm = (ult&&ult.proxKm) ? +ult.proxKm : ((c.kmAtual&&c.intervalo)? (+c.kmAtual + +c.intervalo) : null);
+  let proxData = (ult&&ult.proxData) ? ult.proxData : '';
+  return { ult, ultimaKm: ult?+ult.km:null, ultimaData: ult?ult.data:'', proxKm, proxData };
+}
+function carroMaisUrgente(){
+  let melhor=null, score=null;
+  db.carros.forEach(c=>{
+    const p=proxRevisao(c);
+    let s;
+    if(p.proxData){ s=new Date(p.proxData).getTime(); }
+    else if(p.proxKm!=null){ s=1e15 + (p.proxKm - (+c.kmAtual||0)); } // sem data: usa km faltante
+    else { s=2e15; }
+    if(score===null || s<score){ score=s; melhor=c; }
+  });
+  return melhor;
+}
+
+/* ================= Sincronização + blindagem ================= */
+function setSync(st){ const el=document.getElementById('sync'); const map={ok:['✓ Sincronizado','var(--green)'],salvando:['Salvando…','var(--amber)'],erro:['Erro ao salvar','var(--red)'],off:['Sem conexão','var(--muted)'],conectando:['Conectando…','var(--muted)']}; const [t,c]=map[st]||map.conectando; if(el){ el.textContent=t; el.style.color=c; el.style.borderColor=c; } }
+function normalize(d){ return { carros:Array.isArray(d&&d.carros)?d.carros:[], oficinas:Array.isArray(d&&d.oficinas)?d.oficinas:[], config:(d&&d.config&&typeof d.config==='object')?d.config:{} }; }
+async function carregarDoServidor(){
+  setSync('conectando');
+  let r; try{ r=await fetch('/api/data'); }catch(e){ setSync('off'); return false; }
+  if(!r.ok){ setSync('erro'); return false; }
+  db=normalize(await r.json());
+  try{ localStorage.setItem('cc-db', JSON.stringify(db)); }catch(e){}
+  setSync('ok'); return true;
+}
+let pushTimer=null, enviando=false, pendente=false;
+function save(){ pendente=true; setSync('salvando'); try{ localStorage.setItem('cc-db', JSON.stringify(db)); }catch(e){} clearTimeout(pushTimer); pushTimer=setTimeout(pushAgora,600); }
+async function pushAgora(){
+  if(enviando) return; enviando=true; pendente=false; let ok=false;
+  try{ const r=await fetch('/api/data',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(db)}); ok=r.ok; setSync(r.ok?'ok':'erro'); }catch(e){ setSync('off'); }
+  enviando=false;
+  if(ok){ try{ localStorage.setItem('cc-db', JSON.stringify(db)); }catch(e){} if(pendente) pushAgora(); }
+  else { pendente=true; clearTimeout(pushTimer); pushTimer=setTimeout(pushAgora,4000); }
+}
+function flushSave(keepalive){ if(!pendente||enviando) return; clearTimeout(pushTimer); if(keepalive){ try{ fetch('/api/data',{method:'POST',keepalive:true,headers:{'Content-Type':'application/json'},body:JSON.stringify(db)}); pendente=false; }catch(e){} } else pushAgora(); }
+document.addEventListener('visibilitychange',()=>{ if(document.hidden) flushSave(false); });
+window.addEventListener('pagehide',()=>flushSave(true));
+window.addEventListener('beforeunload',()=>flushSave(true));
+async function sincronizarBaixar(){
+  if(document.querySelector('.overlay.open')) return; if(enviando||pendente) return;
+  let r; try{ r=await fetch('/api/data'); }catch(e){ setSync('off'); return; }
+  if(!r.ok) return;
+  const novo=normalize(await r.json());
+  if(JSON.stringify(novo)!==JSON.stringify(db)){ db=novo; try{ localStorage.setItem('cc-db',JSON.stringify(db)); }catch(e){} renderAtual(); }
+  setSync('ok');
+}
+
+/* ================= Navegação ================= */
+const TITULOS={ home:['Dashboard','Controle de manutenção da frota.'], carros:['Carros','Veículos cadastrados.'], carro:['Carro',''], oficinas:['Oficinas','Oficinas cadastradas.'], relano:['Relatório do Ano','Total de manutenções e gastos no ano.'], config:['Configurações','Identidade e backup dos dados.'] };
+function navegar(v){
+  viewAtual=v;
+  document.querySelectorAll('.view').forEach(s=>s.style.display='none');
+  const el=document.getElementById('view-'+v); if(el) el.style.display='';
+  document.querySelectorAll('.nav-item').forEach(x=>x.classList.toggle('active', x.dataset.view===v));
+  document.getElementById('pgTitulo').textContent=TITULOS[v]?TITULOS[v][0]:'';
+  document.getElementById('pgSub').textContent=TITULOS[v]?TITULOS[v][1]:'';
+  document.getElementById('side').classList.remove('open');
+  window.scrollTo(0,0);
+  renderAtual();
+}
+function renderAtual(){
+  if(viewAtual==='home') renderHome();
+  else if(viewAtual==='carros') renderCarros();
+  else if(viewAtual==='carro') renderCarro();
+  else if(viewAtual==='oficinas') renderOficinas();
+  else if(viewAtual==='relano') renderRelAno();
+  else if(viewAtual==='config') renderConfig();
+}
+
+/* ================= Dashboard ================= */
+function renderHome(){
+  const el=document.getElementById('view-home');
+  const urg=carroMaisUrgente();
+  let card4;
+  if(urg){ const p=proxRevisao(urg);
+    card4=`<div class="dcard big" onclick="abrirCarro('${urg.id}')">
+      <div class="lbl">Próxima revisão</div>
+      <div class="carro">${esc(urg.fabricante||'')} ${esc(urg.modelo||'')} <span style="color:var(--muted);font-weight:500;font-size:16px">${esc(urg.versao||'')} ${esc(urg.ano||'')}</span></div>
+      <div class="revrow">
+        <div class="revbox"><div class="k">Km da última revisão</div><div class="v">${p.ultimaKm!=null?fmtKm(p.ultimaKm):(fmtKm(urg.kmAtual))}</div></div>
+        <div class="revbox prox"><div class="k">Próxima revisão (km)</div><div class="v">${p.proxKm!=null?fmtKm(p.proxKm):'—'}</div></div>
+        <div class="revbox data"><div class="k">Data prevista</div><div class="v">${fmtData(p.proxData)}</div></div>
+      </div>
+    </div>`;
+  } else {
+    card4=`<div class="dcard big" onclick="navegar('carros')"><div class="lbl">Próxima revisão</div><div class="carro" style="font-size:18px;color:var(--muted)">Cadastre um carro para ver a próxima revisão aqui.</div></div>`;
+  }
+  el.innerHTML=`<div class="dash">
+    <div class="dcard" onclick="navegar('carros')"><span class="ic">🚗</span><span class="t">Carros</span></div>
+    <div class="dcard" onclick="navegar('oficinas')"><span class="ic">🔧</span><span class="t">Oficinas cadastradas</span></div>
+    <div class="dcard" onclick="navegar('relano')"><span class="ic">📊</span><span class="t">Relatório total do ano</span></div>
+    ${card4}
+  </div>`;
+}
+
+/* ================= Carros ================= */
+function renderCarros(){
+  const el=document.getElementById('view-carros');
+  const cab=`<div class="toolbar"><button class="btn" onclick="openCarro()">+ Novo carro</button></div>`;
+  if(!db.carros.length){ el.innerHTML=cab+`<div class="empty"><div class="big">🚗</div>Nenhum carro cadastrado.<br>Clique em <b>+ Novo carro</b>.</div>`; return; }
+  const cards=db.carros.map(c=>{ const p=proxRevisao(c);
+    return `<div class="card car-card" onclick="abrirCarro('${c.id}')">
+      <div class="nome">${esc(c.fabricante||'')} ${esc(c.modelo||'')}</div>
+      <div class="meta">${esc(c.versao||'')} · ${esc(c.ano||'')} · ${esc(c.cor||'')}${c.placa?' · '+esc(c.placa):''}</div>
+      <div class="km">Km atual: <b>${fmtKm(c.kmAtual)}</b>${p.proxKm!=null?` · próx. rev: <b>${fmtKm(p.proxKm)}</b>`:''}</div>
+    </div>`;
+  }).join('');
+  el.innerHTML=cab+`<div class="grid">${cards}</div>`;
+}
+function abrirCarro(id){ carroAbertoId=id; carroAba='manut'; navegar('carro'); }
+
+function renderCarro(){
+  const el=document.getElementById('view-carro'); const c=carroById(carroAbertoId);
+  if(!c){ el.innerHTML='<div class="empty">Carro não encontrado.</div>'; return; }
+  document.getElementById('pgTitulo').textContent=nomeCarro(c);
+  document.getElementById('pgSub').textContent='Manutenção e relatórios do veículo.';
+  const p=proxRevisao(c);
+  const head=`<div class="car-head">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap">
+      <div><div class="n">${esc(c.fabricante||'')} ${esc(c.modelo||'')} ${esc(c.versao||'')}</div>
+      <div class="m">${esc(c.ano||'')} · ${esc(c.cor||'')}${c.placa?' · Placa '+esc(c.placa):''}</div></div>
+      <div style="display:flex;gap:8px"><button class="btn secondary small" onclick="openCarro('${c.id}')">✏️ Editar</button><button class="btn secondary small" onclick="navegar('carros')">← Voltar</button></div>
+    </div>
+    <div class="km">Km atual: <b>${fmtKm(c.kmAtual)}</b> · Próxima revisão: <b style="color:var(--amber)">${p.proxKm!=null?fmtKm(p.proxKm):'—'}</b>${p.proxData?` · <b style="color:var(--accent)">${fmtData(p.proxData)}</b>`:''}</div>
+  </div>`;
+  const tabs=`<div class="tabs">
+    <div class="tb ${carroAba==='manut'?'on':''}" onclick="setCarroAba('manut')">🔧 Manutenção</div>
+    <div class="tb ${carroAba==='relman'?'on':''}" onclick="setCarroAba('relman')">📋 Relatório de manutenção</div>
+    <div class="tb ${carroAba==='relfin'?'on':''}" onclick="setCarroAba('relfin')">💰 Relatório financeiro</div>
+  </div>`;
+  let conteudo='';
+  if(carroAba==='manut') conteudo=htmlManut(c);
+  else if(carroAba==='relman') conteudo=htmlRelMan(c);
+  else conteudo=htmlRelFin(c);
+  el.innerHTML=head+tabs+`<div id="carro-conteudo">${conteudo}</div>`;
+}
+function setCarroAba(a){ carroAba=a; renderCarro(); }
+
+function htmlManut(c){
+  const ms=(c.manutencoes||[]).slice().sort((a,b)=>(b.data||'').localeCompare(a.data||''));
+  const cab=`<div class="toolbar"><button class="btn" onclick="openManut('${c.id}')">+ Nova manutenção</button></div>`;
+  if(!ms.length) return cab+`<div class="empty"><div class="big">🔧</div>Nenhuma manutenção registrada ainda.</div>`;
+  const linhas=ms.map(m=>{ const of=oficById(m.oficinaId);
+    return `<tr onclick="openManut('${c.id}','${m.id}')" style="cursor:pointer">
+      <td>${fmtData(m.data)}</td><td>${fmtKm(m.km)}</td><td>${esc(m.tipo||'')}</td>
+      <td>${of?esc(of.nome):'—'}</td><td>${money(m.valor)}</td><td>${m.proxKm?fmtKm(m.proxKm):''}${m.proxData?' · '+fmtData(m.proxData):''}</td></tr>`;
+  }).join('');
+  return cab+`<div class="tbl-wrap"><table class="t"><thead><tr><th>Data</th><th>Km</th><th>Serviço</th><th>Oficina</th><th>Valor</th><th>Próxima rev.</th></tr></thead><tbody>${linhas}</tbody></table></div><div class="hint">Toque numa linha para editar.</div>`;
+}
+function htmlRelMan(c){
+  const ms=(c.manutencoes||[]).slice().sort((a,b)=>(b.data||'').localeCompare(a.data||''));
+  const btns=`<div class="toolbar"><button class="btn" onclick="pdfRelMan('${c.id}')">📄 Gerar PDF</button><button class="btn secondary" onclick="pdfRelMan('${c.id}',true)">📤 Compartilhar</button></div>`;
+  if(!ms.length) return btns+`<div class="empty"><div class="big">📋</div>Sem manutenções para o relatório.</div>`;
+  const linhas=ms.map(m=>{ const of=oficById(m.oficinaId);
+    return `<tr><td>${fmtData(m.data)}</td><td>${fmtKm(m.km)}</td><td>${esc(m.tipo||'')}</td><td>${of?esc(of.nome):'—'}</td><td>${esc(m.descricao||'')}</td><td>${money(m.valor)}</td></tr>`;
+  }).join('');
+  const tot=ms.reduce((s,m)=>s+(+m.valor||0),0);
+  return btns+`<div class="tbl-wrap"><table class="t"><thead><tr><th>Data</th><th>Km</th><th>Serviço</th><th>Oficina</th><th>Descrição</th><th>Valor</th></tr></thead><tbody>${linhas}</tbody></table></div>
+    <div class="totbar"><span>${ms.length} manutenção(ões)</span><span class="tot">${money(tot)}</span></div>`;
+}
+let finIni='', finFim='';
+function htmlRelFin(c){
+  if(!finIni){ finIni=anoAtual()+'-01-01'; finFim=anoAtual()+'-12-31'; }
+  const ms=(c.manutencoes||[]).filter(m=>m.data && m.data>=finIni && m.data<=finFim).sort((a,b)=>(a.data||'').localeCompare(b.data||''));
+  const tot=ms.reduce((s,m)=>s+(+m.valor||0),0);
+  // por tipo
+  const porTipo={}; ms.forEach(m=>{ const t=m.tipo||'Outros'; porTipo[t]=(porTipo[t]||0)+(+m.valor||0); });
+  const tipos=Object.keys(porTipo).sort((a,b)=>porTipo[b]-porTipo[a]);
+  const filtro=`<div class="toolbar">
+    <div class="field" style="margin:0"><label>De</label><input type="date" value="${finIni}" onchange="finIni=this.value; renderCarro()"></div>
+    <div class="field" style="margin:0"><label>Até</label><input type="date" value="${finFim}" onchange="finFim=this.value; renderCarro()"></div>
+    <button class="btn secondary" onclick="pdfRelFin('${c.id}',true)">📤 Enviar / compartilhar</button>
+  </div>`;
+  const linhasTipo=tipos.length?tipos.map(t=>`<tr><td>${esc(t)}</td><td>${money(porTipo[t])}</td></tr>`).join(''):`<tr><td colspan="2" style="color:var(--muted)">Sem gastos no período.</td></tr>`;
+  return filtro+`<div class="totbar"><span>Total no período (${fmtData(finIni)} a ${fmtData(finFim)})</span><span class="tot">${money(tot)}</span></div>
+    <div class="section-label">Por tipo de serviço</div>
+    <div class="tbl-wrap"><table class="t"><thead><tr><th>Tipo de serviço</th><th>Total gasto</th></tr></thead><tbody>${linhasTipo}</tbody></table></div>`;
+}
+
+/* ---- CRUD carro ---- */
+function openCarro(id){
+  const c=id?carroById(id):null;
+  document.getElementById('carTitulo').textContent=c?'Editar carro':'Novo carro';
+  document.getElementById('cId').value=c?c.id:'';
+  ['Fab','Mod','Ver','Ano','Cor','Pla','Km','Int'].forEach(k=>document.getElementById('c'+k).value='');
+  if(c){ document.getElementById('cFab').value=c.fabricante||''; document.getElementById('cMod').value=c.modelo||''; document.getElementById('cVer').value=c.versao||''; document.getElementById('cAno').value=c.ano||''; document.getElementById('cCor').value=c.cor||''; document.getElementById('cPla').value=c.placa||''; document.getElementById('cKm').value=c.kmAtual||''; document.getElementById('cInt').value=c.intervalo||''; }
+  document.getElementById('btnExCarro').style.display=c?'':'none';
+  openOv('ovCarro');
+}
+function salvarCarro(){
+  const fab=document.getElementById('cFab').value.trim(), mod=document.getElementById('cMod').value.trim();
+  if(!fab||!mod){ alert('Preencha ao menos fabricante e modelo.'); return; }
+  const obj={ fabricante:fab, modelo:mod, versao:document.getElementById('cVer').value.trim(), ano:document.getElementById('cAno').value.trim(), cor:document.getElementById('cCor').value.trim(), placa:document.getElementById('cPla').value.trim(), kmAtual:document.getElementById('cKm').value, intervalo:document.getElementById('cInt').value };
+  const id=document.getElementById('cId').value;
+  if(id){ Object.assign(carroById(id),obj); } else { obj.id=uid('car'); obj.manutencoes=[]; db.carros.push(obj); }
+  save(); closeOv('ovCarro'); renderAtual();
+}
+function excluirCarro(){ const id=document.getElementById('cId').value; if(!confirm('Excluir este carro e todas as manutenções dele?')) return; db.carros=db.carros.filter(c=>c.id!==id); save(); closeOv('ovCarro'); navegar('carros'); }
+
+/* ---- CRUD manutenção ---- */
+function openManut(carroId, id){
+  const c=carroById(carroId); if(!c) return;
+  document.getElementById('mCarro').value=carroId;
+  const m=id?(c.manutencoes||[]).find(x=>x.id===id):null;
+  document.getElementById('manTitulo').textContent=m?'Editar manutenção':'Nova manutenção';
+  document.getElementById('mId').value=m?m.id:'';
+  document.getElementById('mData').value=m?m.data:hojeISO();
+  document.getElementById('mKm').value=m?m.km:(c.kmAtual||'');
+  document.getElementById('mTipo').value=m?m.tipo:'';
+  document.getElementById('mDesc').value=m?m.descricao:'';
+  document.getElementById('mValor').value=m?m.valor:'';
+  document.getElementById('mProxKm').value=m?m.proxKm:((c.kmAtual&&c.intervalo)?(+c.kmAtual+ +c.intervalo):'');
+  document.getElementById('mProxData').value=m?m.proxData:'';
+  document.getElementById('tiposLista').innerHTML=TIPOS.map(t=>`<option value="${esc(t)}">`).join('');
+  document.getElementById('mOfic').innerHTML='<option value="">— selecione —</option>'+db.oficinas.map(o=>`<option value="${o.id}" ${m&&m.oficinaId===o.id?'selected':''}>${esc(o.nome)}</option>`).join('');
+  document.getElementById('btnExManut').style.display=m?'':'none';
+  openOv('ovManut');
+}
+function salvarManut(){
+  const carroId=document.getElementById('mCarro').value; const c=carroById(carroId); if(!c) return;
+  if(!c.manutencoes) c.manutencoes=[];
+  const obj={ data:document.getElementById('mData').value, km:document.getElementById('mKm').value, tipo:document.getElementById('mTipo').value.trim(), oficinaId:document.getElementById('mOfic').value, descricao:document.getElementById('mDesc').value.trim(), valor:document.getElementById('mValor').value, proxKm:document.getElementById('mProxKm').value, proxData:document.getElementById('mProxData').value };
+  if(!obj.data){ alert('Informe a data.'); return; }
+  const id=document.getElementById('mId').value;
+  if(id){ Object.assign(c.manutencoes.find(x=>x.id===id),obj); } else { obj.id=uid('mn'); c.manutencoes.push(obj); }
+  // atualiza km atual do carro se a manutenção for mais recente
+  if(obj.km && (+obj.km > (+c.kmAtual||0))) c.kmAtual=obj.km;
+  save(); closeOv('ovManut'); renderAtual();
+}
+function excluirManut(){ const carroId=document.getElementById('mCarro').value, id=document.getElementById('mId').value; const c=carroById(carroId); if(!c) return; if(!confirm('Excluir esta manutenção?')) return; c.manutencoes=(c.manutencoes||[]).filter(x=>x.id!==id); save(); closeOv('ovManut'); renderAtual(); }
+
+/* ================= Oficinas ================= */
+function renderOficinas(){
+  const el=document.getElementById('view-oficinas');
+  const cab=`<div class="toolbar"><button class="btn" onclick="openOfic()">+ Nova oficina</button></div>`;
+  if(!db.oficinas.length){ el.innerHTML=cab+`<div class="empty"><div class="big">🔧</div>Nenhuma oficina cadastrada.</div>`; return; }
+  const cards=db.oficinas.map(o=>{
+    const tel=o.telefone?`<div style="margin-top:8px;font-size:13px">📞 <a href="tel:${esc(soDig(o.telefone))}">${esc(o.telefone)}</a>${waLink(o.telefone)?` · <a href="${waLink(o.telefone)}" target="_blank">WhatsApp</a>`:''}</div>`:'';
+    return `<div class="card">
+      <div style="display:flex;justify-content:space-between;gap:8px"><div class="nome" style="font-size:16px;font-weight:700">${esc(o.nome)}</div><button class="btn secondary small" onclick="openOfic('${o.id}')">Editar</button></div>
+      ${o.especialidade?`<div class="meta" style="color:var(--muted);font-size:13px;margin-top:3px">${esc(o.especialidade)}</div>`:''}
+      ${o.endereco?`<div style="font-size:13px;margin-top:6px;color:var(--muted)">📍 ${esc(o.endereco)}</div>`:''}
+      ${tel}${o.obs?`<div class="hint">${esc(o.obs)}</div>`:''}
+    </div>`;
+  }).join('');
+  el.innerHTML=cab+`<div class="grid">${cards}</div>`;
+}
+function openOfic(id){
+  const o=id?oficById(id):null;
+  document.getElementById('ofTitulo').textContent=o?'Editar oficina':'Nova oficina';
+  document.getElementById('oId').value=o?o.id:'';
+  document.getElementById('oNome').value=o?o.nome:''; document.getElementById('oTel').value=o?o.telefone:''; document.getElementById('oEsp').value=o?o.especialidade:''; document.getElementById('oEnd').value=o?o.endereco:''; document.getElementById('oObs').value=o?o.obs:'';
+  document.getElementById('btnExOfic').style.display=o?'':'none';
+  openOv('ovOfic');
+}
+function salvarOfic(){
+  const nome=document.getElementById('oNome').value.trim(); if(!nome){ alert('Digite o nome da oficina.'); return; }
+  const obj={ nome, telefone:document.getElementById('oTel').value.trim(), especialidade:document.getElementById('oEsp').value.trim(), endereco:document.getElementById('oEnd').value.trim(), obs:document.getElementById('oObs').value.trim() };
+  const id=document.getElementById('oId').value;
+  if(id){ Object.assign(oficById(id),obj); } else { obj.id=uid('of'); db.oficinas.push(obj); }
+  save(); closeOv('ovOfic'); renderAtual();
+}
+function excluirOfic(){ const id=document.getElementById('oId').value; if(!confirm('Excluir esta oficina?')) return; db.oficinas=db.oficinas.filter(o=>o.id!==id); save(); closeOv('ovOfic'); renderOficinas(); }
+
+/* ================= Relatório do ano ================= */
+function renderRelAno(){
+  const el=document.getElementById('view-relano'); const ano=anoAtual();
+  const ini=ano+'-01-01', fim=ano+'-12-31';
+  let totGeral=0, nGeral=0;
+  const linhas=db.carros.map(c=>{ const ms=(c.manutencoes||[]).filter(m=>m.data>=ini&&m.data<=fim); const t=ms.reduce((s,m)=>s+(+m.valor||0),0); totGeral+=t; nGeral+=ms.length;
+    return `<tr><td>${esc(nomeCarro(c))}</td><td>${ms.length}</td><td>${money(t)}</td></tr>`;
+  }).join('');
+  el.innerHTML=`<div class="toolbar"><button class="btn" onclick="pdfRelAno()">📄 Gerar PDF</button><button class="btn secondary" onclick="pdfRelAno(true)">📤 Compartilhar</button></div>
+    <div class="section-label">Ano ${ano}</div>
+    <div class="tbl-wrap"><table class="t"><thead><tr><th>Carro</th><th>Manutenções</th><th>Total gasto</th></tr></thead><tbody>${linhas||'<tr><td colspan=3 style="color:var(--muted)">Sem carros.</td></tr>'}</tbody></table></div>
+    <div class="totbar"><span>${nGeral} manutenção(ões) em ${db.carros.length} carro(s)</span><span class="tot">${money(totGeral)}</span></div>`;
+}
+
+/* ================= PDFs ================= */
+function docBase(titulo, sub){
+  const { jsPDF }=window.jspdf; const doc=new jsPDF();
+  doc.setFontSize(15); doc.text(((db.config&&db.config.igreja)||'Primeira Igreja Batista de Niterói'),14,18);
+  doc.setFontSize(11); doc.setTextColor(110); doc.text(titulo,14,25);
+  if(sub){ doc.setTextColor(0); doc.setFontSize(13); doc.text(sub,14,34); }
+  return doc;
+}
+function jspdfPronto(){ return window.jspdf && window.jspdf.jsPDF; }
+async function shareOrSave(doc, nome, texto){
+  try{ const blob=doc.output('blob'); const file=new File([blob],nome,{type:'application/pdf'});
+    if(navigator.canShare && navigator.canShare({files:[file]})){ await navigator.share({files:[file], title:nome, text:texto||nome}); }
+    else { doc.save(nome); alert('Seu navegador não compartilha arquivo direto (mais comum no PC). O PDF foi baixado — anexe no email/WhatsApp. No celular, abre a tela de compartilhar.'); }
+  }catch(e){}
+}
+function pdfRelMan(carroId, compartilhar){
+  if(!jspdfPronto()){ alert('Gerador de PDF carregando, tente em 1-2s.'); return; }
+  const c=carroById(carroId); if(!c) return;
+  const ms=(c.manutencoes||[]).slice().sort((a,b)=>(a.data||'').localeCompare(b.data||''));
+  const doc=docBase('Relatório de manutenção', nomeCarro(c));
+  const body=ms.map(m=>{ const of=oficById(m.oficinaId); return [fmtData(m.data),fmtKm(m.km),m.tipo||'',of?of.nome:'—',m.descricao||'',money(m.valor)]; });
+  doc.autoTable({ startY:40, head:[['Data','Km','Serviço','Oficina','Descrição','Valor']], body:body.length?body:[['—','—','sem registros','—','—','—']], styles:{fontSize:9,cellPadding:2}, headStyles:{fillColor:[79,124,255]} });
+  const tot=ms.reduce((s,m)=>s+(+m.valor||0),0); let y=(doc.lastAutoTable?doc.lastAutoTable.finalY:50)+12;
+  doc.setFontSize(12); doc.setTextColor(0); doc.text(`Total gasto: ${money(tot)}`,14,y);
+  const nome=`Manutencao - ${nomeCarro(c)}.pdf`;
+  if(compartilhar) shareOrSave(doc,nome,'Relatório de manutenção'); else doc.save(nome);
+}
+function pdfRelFin(carroId, compartilhar){
+  if(!jspdfPronto()){ alert('Gerador de PDF carregando, tente em 1-2s.'); return; }
+  const c=carroById(carroId); if(!c) return;
+  const ms=(c.manutencoes||[]).filter(m=>m.data>=finIni&&m.data<=finFim);
+  const porTipo={}; ms.forEach(m=>{ const t=m.tipo||'Outros'; porTipo[t]=(porTipo[t]||0)+(+m.valor||0); });
+  const doc=docBase('Relatório financeiro', nomeCarro(c));
+  doc.setFontSize(10); doc.setTextColor(110); doc.text(`Período: ${fmtData(finIni)} a ${fmtData(finFim)}`,14,41);
+  const body=Object.keys(porTipo).sort((a,b)=>porTipo[b]-porTipo[a]).map(t=>[t,money(porTipo[t])]);
+  doc.autoTable({ startY:46, head:[['Tipo de serviço','Total gasto']], body:body.length?body:[['—','R$ 0,00']], styles:{fontSize:10,cellPadding:2.5}, headStyles:{fillColor:[79,124,255]} });
+  const tot=ms.reduce((s,m)=>s+(+m.valor||0),0); let y=(doc.lastAutoTable?doc.lastAutoTable.finalY:60)+12;
+  doc.setFontSize(13); doc.setTextColor(20,120,70); doc.text(`Total no período: ${money(tot)}`,14,y);
+  const nome=`Financeiro - ${nomeCarro(c)}.pdf`;
+  if(compartilhar) shareOrSave(doc,nome,'Relatório financeiro'); else doc.save(nome);
+}
+function pdfRelAno(compartilhar){
+  if(!jspdfPronto()){ alert('Gerador de PDF carregando, tente em 1-2s.'); return; }
+  const ano=anoAtual(), ini=ano+'-01-01', fim=ano+'-12-31';
+  const doc=docBase('Relatório total do ano', 'Ano '+ano);
+  let totG=0; const body=db.carros.map(c=>{ const ms=(c.manutencoes||[]).filter(m=>m.data>=ini&&m.data<=fim); const t=ms.reduce((s,m)=>s+(+m.valor||0),0); totG+=t; return [nomeCarro(c), ms.length, money(t)]; });
+  doc.autoTable({ startY:40, head:[['Carro','Manutenções','Total gasto']], body:body.length?body:[['—','0','R$ 0,00']], styles:{fontSize:10,cellPadding:2.5}, headStyles:{fillColor:[79,124,255]} });
+  let y=(doc.lastAutoTable?doc.lastAutoTable.finalY:60)+12; doc.setFontSize(13); doc.setTextColor(20,120,70); doc.text(`Total geral no ano: ${money(totG)}`,14,y);
+  const nome=`Relatorio do ano ${ano}.pdf`;
+  if(compartilhar) shareOrSave(doc,nome,'Relatório do ano'); else doc.save(nome);
+}
+
+/* ================= Config ================= */
+function renderConfig(){
+  const el=document.getElementById('view-config'); const c=db.config||{};
+  el.innerHTML=`
+    <div class="card"><h3 style="margin-bottom:12px">🏛️ Identidade</h3>
+      <div class="field"><label>Nome (aparece no topo e nos PDFs)</label><input id="cfgIgreja" value="${esc(c.igreja||'Primeira Igreja Batista de Niterói')}"></div>
+      <button class="btn" onclick="salvarCfg()">Salvar</button>
+    </div>
+    <div class="card" style="margin-top:14px"><h3 style="margin-bottom:12px">💾 Backup dos dados</h3>
+      <p style="color:var(--muted);font-size:14px;margin-bottom:12px">Baixe uma cópia de tudo (carros, manutenções, oficinas) ou restaure de um arquivo.</p>
+      <div style="display:flex;gap:10px;flex-wrap:wrap">
+        <button class="btn secondary" onclick="exportBk()">⬇ Baixar backup (.json)</button>
+        <button class="btn secondary" onclick="document.getElementById('impBk').click()">⬆ Restaurar backup</button>
+        <input type="file" id="impBk" accept="application/json" style="display:none" onchange="importBk(event)">
+      </div>
+    </div>`;
+}
+function salvarCfg(){ db.config=Object.assign(db.config||{},{ igreja:document.getElementById('cfgIgreja').value.trim() }); save(); document.getElementById('brandNome').textContent=db.config.igreja||'Controle de Carros'; alert('Salvo.'); }
+function exportBk(){ const blob=new Blob([JSON.stringify(db,null,2)],{type:'application/json'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='backup-controle-carros.json'; a.click(); }
+function importBk(ev){ const f=ev.target.files[0]; if(!f) return; const r=new FileReader(); r.onload=()=>{ try{ const d=JSON.parse(r.result); if(!('carros' in d)) throw 0; if(!confirm('Isto substitui todos os dados atuais. Continuar?')) return; db=normalize(d); save(); renderAtual(); alert('Backup restaurado!'); }catch(e){ alert('Arquivo inválido.'); } }; r.readAsText(f); ev.target.value=''; }
+
+/* ================= Modais util ================= */
+function openOv(id){ document.getElementById(id).classList.add('open'); }
+function closeOv(id){ document.getElementById(id).classList.remove('open'); }
+['ovCarro','ovManut','ovOfic'].forEach(id=>document.getElementById(id).addEventListener('click',e=>{ if(e.target.id===id) closeOv(id); }));
+
+/* ================= Boot ================= */
+(async function boot(){
+  const ok=await carregarDoServidor();
+  if(!ok){ try{ const bk=localStorage.getItem('cc-db'); if(bk){ db=normalize(JSON.parse(bk)); setSync('off'); } }catch(e){} }
+  if(db.config&&db.config.igreja) document.getElementById('brandNome').textContent=db.config.igreja;
+  navegar('home');
+  if(ok) setInterval(sincronizarBaixar,8000);
+})();
+</script>
+</body>
+</html>
