@@ -41,7 +41,7 @@
   .btn.small{ padding:7px 12px; font-size:13px; }
   .toolbar{ display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-bottom:18px; }
   /* Dashboard */
-  .dash{ display:grid; grid-template-columns:repeat(2,1fr); gap:16px; max-width:900px; }
+  .dash{ display:grid; grid-template-columns:repeat(3,1fr); gap:16px; max-width:1040px; }
   .dcard{ background:var(--surface); border:1px solid var(--border); border-radius:16px; padding:26px 22px; cursor:pointer; transition:transform .12s, border-color .12s; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px; min-height:150px; text-align:center; }
   .dcard:hover{ border-color:var(--accent); transform:translateY(-2px); }
   .dcard .ic{ font-size:40px; } .dcard .t{ font-size:17px; font-weight:600; }
@@ -307,10 +307,10 @@ function renderHome(){
     card4=`<div class="dcard big" onclick="navegar('carros')"><div class="lbl">Próxima revisão</div><div class="carro" style="font-size:18px;color:var(--muted)">Cadastre um carro para ver a próxima revisão aqui.</div></div>`;
   }
   el.innerHTML=`<div class="dash">
+    ${card4}
     <div class="dcard" onclick="navegar('carros')"><span class="ic">🚗</span><span class="t">Carros</span></div>
     <div class="dcard" onclick="navegar('oficinas')"><span class="ic">🔧</span><span class="t">Oficinas cadastradas</span></div>
     <div class="dcard" onclick="navegar('relano')"><span class="ic">📊</span><span class="t">Relatório total do ano</span></div>
-    ${card4}
   </div>`;
 }
 
