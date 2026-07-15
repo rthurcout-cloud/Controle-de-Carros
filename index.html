@@ -150,6 +150,7 @@
     <div class="nav-lbl">Geral</div>
     <div class="nav-item" data-view="home" onclick="navegar('home')"><span>🏠</span> Dashboard</div>
     <div class="nav-item" data-view="carros" onclick="navegar('carros')"><span>🚗</span> Carros</div>
+    <div class="nav-item" data-view="comb" onclick="navegar('comb')"><span>⛽</span> Combustível</div>
     <div class="nav-item" data-view="oficinas" onclick="navegar('oficinas')"><span>🔧</span> Oficinas</div>
     <div class="nav-item" data-view="relano" onclick="navegar('relano')"><span>📊</span> Relatório do Ano</div>
     <div class="nav-lbl">Configurações</div>
@@ -168,6 +169,8 @@
     <section id="view-home" class="view"></section>
     <section id="view-carros" class="view" style="display:none"></section>
     <section id="view-carro" class="view" style="display:none"></section>
+    <section id="view-comb" class="view" style="display:none"></section>
+    <section id="view-combcarro" class="view" style="display:none"></section>
     <section id="view-oficinas" class="view" style="display:none"></section>
     <section id="view-relano" class="view" style="display:none"></section>
     <section id="view-config" class="view" style="display:none"></section>
@@ -220,6 +223,25 @@
     <button class="btn danger" id="btnExManut" onclick="excluirManut()" style="margin-right:auto;display:none">Excluir</button>
     <button class="btn secondary" onclick="closeOv('ovManut')">Cancelar</button>
     <button class="btn" onclick="salvarManut()">Salvar</button>
+  </div>
+</div></div>
+
+<!-- MODAL ABASTECIMENTO -->
+<div class="overlay" id="ovAbast"><div class="modal" style="max-width:460px">
+  <h2 id="abTitulo">Novo abastecimento</h2><input type="hidden" id="abId"><input type="hidden" id="abCarro">
+  <div class="row">
+    <div class="field"><label>Data</label><input id="abData" type="date"></div>
+    <div class="field"><label>Litros</label><input id="abLitros" type="number" step="0.01" placeholder="0,00" oninput="atualizaPrecoLitro()"></div>
+  </div>
+  <div class="row">
+    <div class="field"><label>Valor pago (R$)</label><input id="abValor" type="number" step="0.01" placeholder="0,00" oninput="atualizaPrecoLitro()"></div>
+  </div>
+  <div class="field"><label>Posto</label><input id="abPosto" placeholder="Ex: Posto Ipiranga - Icaraí"></div>
+  <div class="hint" id="abPreco" style="margin-top:0"></div>
+  <div class="modal-actions">
+    <button class="btn danger" id="btnExAbast" onclick="excluirAbast()" style="margin-right:auto;display:none">Excluir</button>
+    <button class="btn secondary" onclick="closeOv('ovAbast')">Cancelar</button>
+    <button class="btn" onclick="salvarAbast()">Salvar</button>
   </div>
 </div></div>
 
@@ -341,7 +363,7 @@ async function sincronizarBaixar(){
 }
 
 /* ================= Navegação ================= */
-const TITULOS={ home:['Dashboard','Controle de manutenção da frota.'], carros:['Carros','Veículos cadastrados.'], carro:['Carro',''], oficinas:['Oficinas','Oficinas cadastradas.'], relano:['Relatório do Ano','Total de manutenções e gastos no ano.'], config:['Configurações','Identidade e backup dos dados.'] };
+const TITULOS={ home:['Dashboard','Controle de manutenção da frota.'], carros:['Carros','Veículos cadastrados.'], carro:['Carro',''], comb:['Combustível','Escolha o carro para lançar os abastecimentos.'], combcarro:['Combustível',''], oficinas:['Oficinas','Oficinas cadastradas.'], relano:['Relatório do Ano','Total de manutenções e gastos no ano.'], config:['Configurações','Identidade e backup dos dados.'] };
 function navegar(v){
   viewAtual=v;
   document.querySelectorAll('.view').forEach(s=>s.style.display='none');
@@ -357,6 +379,8 @@ function renderAtual(){
   if(viewAtual==='home') renderHome();
   else if(viewAtual==='carros') renderCarros();
   else if(viewAtual==='carro') renderCarro();
+  else if(viewAtual==='comb') renderComb();
+  else if(viewAtual==='combcarro') renderCombCarro();
   else if(viewAtual==='oficinas') renderOficinas();
   else if(viewAtual==='relano') renderRelAno();
   else if(viewAtual==='config') renderConfig();
@@ -526,6 +550,103 @@ function salvarManut(){
   save(); closeOv('ovManut'); renderAtual();
 }
 function excluirManut(){ const carroId=document.getElementById('mCarro').value, id=document.getElementById('mId').value; const c=carroById(carroId); if(!c) return; if(!confirm('Excluir esta manutenção?')) return; c.manutencoes=(c.manutencoes||[]).filter(x=>x.id!==id); save(); closeOv('ovManut'); renderAtual(); }
+
+/* ================= Combustível (só gastos: data, litros, valor, posto) ================= */
+let combCarroId='', combIni='', combFim='';
+function abastDe(c){ return (c.abastecimentos||[]).slice().sort((a,b)=>(b.data||'').localeCompare(a.data||'')); }
+function totalAbast(c, ini, fim){
+  return (c.abastecimentos||[]).reduce((s,a)=>{
+    if(ini && (!a.data || a.data<ini)) return s;
+    if(fim && (!a.data || a.data>fim)) return s;
+    return s+(+a.valor||0);
+  },0);
+}
+function renderComb(){
+  const el=document.getElementById('view-comb');
+  if(!db.carros.length){ el.innerHTML=`<div class="empty"><div class="big">⛽</div>Nenhum carro cadastrado.<br>Cadastre um carro em <b>Carros</b> para lançar abastecimentos.</div>`; return; }
+  const cards=db.carros.map(c=>{
+    const lista=abastDe(c); const ult=lista[0];
+    const ano=anoAtual();
+    const noAno=totalAbast(c, ano+'-01-01', ano+'-12-31');
+    return `<div class="card car-card" onclick="abrirComb('${c.id}')">
+      <div class="nome">${esc(c.fabricante||'')} ${esc(c.modelo||'')}</div>
+      <div class="meta">${esc(c.versao||'')} · ${esc(c.ano||'')} · ${esc(c.cor||'')}${c.placa?' · '+esc(c.placa):''}</div>
+      <div class="km">Gasto em ${ano}: <b style="color:var(--green)">${money(noAno)}</b></div>
+      <div class="km" style="margin-top:4px;color:var(--muted);font-size:12px">${ult?('Último: '+fmtData(ult.data)+' · '+money(ult.valor)+(ult.posto?' · '+esc(ult.posto):'')):'Nenhum abastecimento lançado'}</div>
+    </div>`;
+  }).join('');
+  el.innerHTML=`<div class="grid">${cards}</div>`;
+}
+function abrirComb(id){ combCarroId=id; navegar('combcarro'); }
+function renderCombCarro(){
+  const el=document.getElementById('view-combcarro'); const c=carroById(combCarroId);
+  if(!c){ navegar('comb'); return; }
+  document.getElementById('pgTitulo').textContent='Combustível';
+  document.getElementById('pgSub').textContent=nomeCarro(c);
+  if(!combIni){ combIni=anoAtual()+'-01-01'; combFim=anoAtual()+'-12-31'; }
+  const head=`<div class="car-head">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap">
+      <div><div class="n">${esc(c.fabricante||'')} ${esc(c.modelo||'')} ${esc(c.versao||'')}</div>
+      <div class="m">${esc(c.ano||'')} · ${esc(c.cor||'')}${c.placa?' · Placa '+esc(c.placa):''}</div></div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn small" onclick="openAbast('${c.id}')">+ Novo abastecimento</button><button class="btn secondary small" onclick="navegar('comb')">← Voltar</button></div>
+    </div>
+  </div>`;
+  const filtro=`<div class="toolbar" style="align-items:flex-end">
+    <div class="field" style="margin:0"><label>De</label><input type="date" value="${combIni}" onchange="combIni=this.value; renderCombCarro()"></div>
+    <div class="field" style="margin:0"><label>Até</label><input type="date" value="${combFim}" onchange="combFim=this.value; renderCombCarro()"></div>
+  </div>`;
+  const lista=(c.abastecimentos||[]).filter(a=>a.data && a.data>=combIni && a.data<=combFim).sort((a,b)=>(b.data||'').localeCompare(a.data||''));
+  const tot=lista.reduce((s,a)=>s+(+a.valor||0),0);
+  const litros=lista.reduce((s,a)=>s+(+a.litros||0),0);
+  let corpo;
+  if(!(c.abastecimentos||[]).length) corpo=`<div class="empty"><div class="big">⛽</div>Nenhum abastecimento lançado.<br>Clique em <b>+ Novo abastecimento</b>.</div>`;
+  else if(!lista.length) corpo=`<div class="empty"><div class="big">⛽</div>Nenhum abastecimento neste período.</div>`;
+  else {
+    const linhas=lista.map(a=>{
+      const pl=(+a.litros>0)?money((+a.valor||0)/(+a.litros)):'—';
+      return `<tr onclick="openAbast('${c.id}','${a.id}')" style="cursor:pointer"><td>${fmtData(a.data)}</td><td>${(+a.litros||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})} L</td><td>${money(a.valor)}</td><td>${pl}</td><td>${esc(a.posto||'—')}</td></tr>`;
+    }).join('');
+    corpo=`<div class="tbl-wrap"><table class="t"><thead><tr><th>Data</th><th>Litros</th><th>Valor</th><th>R$/litro</th><th>Posto</th></tr></thead><tbody>${linhas}</tbody></table></div>
+      <div class="totbar"><span>Total no período (${fmtData(combIni)} a ${fmtData(combFim)}) · ${lista.length} abastecimento${lista.length>1?'s':''} · ${litros.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})} L</span><span class="tot">${money(tot)}</span></div>
+      <div class="hint">Toque numa linha para editar.</div>`;
+  }
+  el.innerHTML=head+filtro+corpo;
+}
+function openAbast(carroId, id){
+  const c=carroById(carroId); if(!c) return;
+  document.getElementById('abCarro').value=carroId;
+  const a=id?(c.abastecimentos||[]).find(x=>x.id===id):null;
+  document.getElementById('abTitulo').textContent=a?'Editar abastecimento':'Novo abastecimento';
+  document.getElementById('abId').value=a?a.id:'';
+  document.getElementById('abData').value=a?a.data:hojeISO();
+  document.getElementById('abLitros').value=a?a.litros:'';
+  document.getElementById('abValor').value=a?a.valor:'';
+  document.getElementById('abPosto').value=a?(a.posto||''):'';
+  document.getElementById('btnExAbast').style.display=a?'':'none';
+  atualizaPrecoLitro();
+  openOv('ovAbast');
+}
+function atualizaPrecoLitro(){
+  const l=+document.getElementById('abLitros').value||0, v=+document.getElementById('abValor').value||0;
+  document.getElementById('abPreco').textContent = (l>0&&v>0) ? ('Preço do litro: '+money(v/l)) : '';
+}
+function salvarAbast(){
+  const carroId=document.getElementById('abCarro').value; const c=carroById(carroId); if(!c) return;
+  if(!c.abastecimentos) c.abastecimentos=[];
+  const obj={ data:document.getElementById('abData').value, litros:document.getElementById('abLitros').value, valor:document.getElementById('abValor').value, posto:document.getElementById('abPosto').value.trim() };
+  if(!obj.data){ alert('Informe a data.'); return; }
+  if(!(+obj.valor>0)){ alert('Informe o valor pago.'); return; }
+  const id=document.getElementById('abId').value;
+  if(id){ Object.assign(c.abastecimentos.find(x=>x.id===id),obj); } else { obj.id=uid('ab'); c.abastecimentos.push(obj); }
+  save(); closeOv('ovAbast'); renderAtual();
+}
+function excluirAbast(){
+  const carroId=document.getElementById('abCarro').value, id=document.getElementById('abId').value;
+  const c=carroById(carroId); if(!c) return;
+  if(!confirm('Excluir este abastecimento?')) return;
+  c.abastecimentos=(c.abastecimentos||[]).filter(x=>x.id!==id);
+  save(); closeOv('ovAbast'); renderAtual();
+}
 
 /* ================= Oficinas ================= */
 function renderOficinas(){
@@ -738,7 +859,7 @@ function importBk(ev){ const f=ev.target.files[0]; if(!f) return; const r=new Fi
 /* ================= Modais util ================= */
 function openOv(id){ document.getElementById(id).classList.add('open'); }
 function closeOv(id){ document.getElementById(id).classList.remove('open'); }
-['ovCarro','ovManut','ovOfic'].forEach(id=>document.getElementById(id).addEventListener('click',e=>{ if(e.target.id===id) closeOv(id); }));
+['ovCarro','ovManut','ovOfic','ovAbast'].forEach(id=>document.getElementById(id).addEventListener('click',e=>{ if(e.target.id===id) closeOv(id); }));
 
 /* ================= Boot ================= */
 (async function boot(){
