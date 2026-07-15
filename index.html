@@ -240,6 +240,33 @@
   </div>
 </div></div>
 
+<!-- MODAL AGENDAR REVISÃO (aviso no celular) -->
+<div class="overlay" id="ovAgenda"><div class="modal">
+  <h2>📅 Avisar no celular</h2>
+  <div id="agInfo"></div>
+  <div id="agAcoes">
+    <div class="field" style="margin-top:16px"><label>Avisar com quanta antecedência?</label>
+      <select id="agAntec">
+        <option value="30">30 dias antes</option>
+        <option value="15">15 dias antes</option>
+        <option value="7" selected>7 dias antes</option>
+        <option value="3">3 dias antes</option>
+        <option value="1">1 dia antes</option>
+      </select>
+    </div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap">
+      <button class="btn" style="flex:1;min-width:180px" onclick="agIcs()">📥 Adicionar ao calendário</button>
+      <button class="btn secondary" style="flex:1;min-width:180px" onclick="agGoogle()">Abrir no Google Agenda</button>
+    </div>
+    <div class="hint" style="margin-top:14px">
+      <b>iPhone:</b> toque em <b>Adicionar ao calendário</b> → escolha <b>Calendário</b> na tela de compartilhar (ou abra o arquivo baixado).<br>
+      <b>Android:</b> qualquer um dos dois funciona; o <b>Google Agenda</b> é o mais direto.<br>
+      Além da antecedência escolhida, sempre entra também um lembrete <b>1 dia antes</b>.
+    </div>
+  </div>
+  <div class="modal-actions"><button class="btn secondary" onclick="closeAgenda()">Fechar</button></div>
+</div></div>
+
 <script>
 /* ================= Estado ================= */
 let db = { carros:[], oficinas:[], config:{} };
@@ -387,7 +414,7 @@ function renderCarro(){
     <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap">
       <div><div class="n">${esc(c.fabricante||'')} ${esc(c.modelo||'')} ${esc(c.versao||'')}</div>
       <div class="m">${esc(c.ano||'')} · ${esc(c.cor||'')}${c.placa?' · Placa '+esc(c.placa):''}</div></div>
-      <div style="display:flex;gap:8px"><button class="btn secondary small" onclick="openCarro('${c.id}')">✏️ Editar</button><button class="btn secondary small" onclick="navegar('carros')">← Voltar</button></div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn small" onclick="openAgenda('${c.id}')">📅 Avisar no celular</button><button class="btn secondary small" onclick="openCarro('${c.id}')">✏️ Editar</button><button class="btn secondary small" onclick="navegar('carros')">← Voltar</button></div>
     </div>
     <div class="km">Km atual: <b>${fmtKm(c.kmAtual)}</b> · Próxima revisão: <b style="color:var(--amber)">${p.proxKm!=null?fmtKm(p.proxKm):'—'}</b>${p.proxData?` · <b style="color:var(--accent)">${fmtData(p.proxData)}</b>`:''}</div>
   </div>`;
@@ -553,6 +580,94 @@ function docBase(titulo, sub){
   return doc;
 }
 function jspdfPronto(){ return window.jspdf && window.jspdf.jsPDF; }
+/* ===== Agendar revisão no calendário do celular (.ics / Google Agenda) ===== */
+let agCarroId='';
+function icsEsc(s){ return (''+(s==null?'':s)).replace(/\\/g,'\\\\').replace(/;/g,'\\;').replace(/,/g,'\\,').replace(/\r?\n/g,'\\n'); }
+function icsFold(l){ // RFC 5545: máx. 75 OCTETOS por linha (não caracteres — acentos ocupam 2 bytes)
+  const oct=s=>{ try{ return new TextEncoder().encode(s).length; }catch(e){ return s.length; } };
+  if(oct(l)<=73) return l;
+  const partes=[]; let cur='';
+  for(const ch of l){ // itera por code point: nunca parte um caractere no meio
+    const lim = partes.length===0 ? 73 : 72; // linha de continuação começa com um espaço
+    if(oct(cur+ch)>lim){ partes.push(cur); cur=ch; } else cur+=ch;
+  }
+  if(cur) partes.push(cur);
+  return partes.map((s,i)=> i===0 ? s : ' '+s).join('\r\n');
+}
+function icsDia(iso){ return (''+(iso||'')).replace(/-/g,''); }
+function maisDias(iso,n){ const d=new Date(iso+'T12:00:00'); d.setDate(d.getDate()+n); return d.toISOString().slice(0,10); }
+function tituloRev(c){ return 'Revisão — '+nomeCarro(c)+(c.placa?' ('+c.placa+')':''); }
+function descRev(c){
+  const p=proxRevisao(c);
+  const of=p.ult&&p.ult.oficinaId ? (db.oficinas||[]).find(o=>o.id===p.ult.oficinaId) : null;
+  return [
+    'Revisão do veículo da frota — PIB Niterói.',
+    'Km da última revisão: '+(p.ultimaKm!=null?fmtKm(p.ultimaKm):fmtKm(c.kmAtual)),
+    'Próxima revisão prevista: '+(p.proxKm!=null?fmtKm(p.proxKm):'—'),
+    of?('Oficina: '+of.nome+(of.telefone?' · '+of.telefone:'')):'',
+    (p.ult&&p.ult.descricao)?('Última manutenção: '+p.ult.descricao):''
+  ].filter(Boolean).join('\n');
+}
+function montarIcs(c, antec){
+  const p=proxRevisao(c); if(!p.proxData) return null;
+  const of=p.ult&&p.ult.oficinaId ? (db.oficinas||[]).find(o=>o.id===p.ult.oficinaId) : null;
+  const ini=icsDia(p.proxData), fim=icsDia(maisDias(p.proxData,1));
+  const stamp=new Date().toISOString().replace(/[-:]/g,'').split('.')[0]+'Z';
+  const tit=tituloRev(c);
+  const L=['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//PIB Niteroi//Controle de Carros//PT-BR','CALSCALE:GREGORIAN','METHOD:PUBLISH',
+    'BEGIN:VEVENT',
+    'UID:'+c.id+'-'+ini+'@controle-de-carros',
+    'DTSTAMP:'+stamp,
+    'DTSTART;VALUE=DATE:'+ini,
+    'DTEND;VALUE=DATE:'+fim,
+    'SUMMARY:'+icsEsc(tit),
+    'DESCRIPTION:'+icsEsc(descRev(c))];
+  if(of&&of.endereco) L.push('LOCATION:'+icsEsc(of.endereco));
+  L.push('BEGIN:VALARM','TRIGGER:-P'+antec+'D','ACTION:DISPLAY','DESCRIPTION:'+icsEsc(tit),'END:VALARM');
+  if(+antec!==1) L.push('BEGIN:VALARM','TRIGGER:-P1D','ACTION:DISPLAY','DESCRIPTION:'+icsEsc(tit),'END:VALARM');
+  L.push('END:VEVENT','END:VCALENDAR');
+  return L.map(icsFold).join('\r\n')+'\r\n';
+}
+function openAgenda(id){
+  const c=carroById(id); if(!c) return;
+  agCarroId=id;
+  const p=proxRevisao(c);
+  const box=document.getElementById('agInfo');
+  const acoes=document.getElementById('agAcoes');
+  if(!p.proxData){
+    box.innerHTML=`<div class="hint" style="margin:0 0 4px">⚠️ <b>${esc(nomeCarro(c))}</b> ainda não tem <b>data prevista</b> de revisão, então não dá para criar o lembrete.<br>Cadastre a data em <b>Manutenção → Nova manutenção</b> (campo "Próxima revisão — data") e volte aqui.</div>`;
+    acoes.style.display='none';
+  } else {
+    box.innerHTML=`<div class="hint" style="margin:0 0 4px">Vou criar um evento no calendário do celular em <b style="color:var(--accent)">${fmtData(p.proxData)}</b> para a revisão do <b>${esc(nomeCarro(c))}</b>${p.proxKm!=null?` (aos <b style="color:var(--amber)">${fmtKm(p.proxKm)}</b>)`:''}. O próprio celular te avisa na antecedência escolhida — não precisa abrir o app.</div>`;
+    acoes.style.display='';
+  }
+  document.getElementById('ovAgenda').classList.add('open');
+}
+function closeAgenda(){ document.getElementById('ovAgenda').classList.remove('open'); }
+async function agIcs(){
+  const c=carroById(agCarroId); if(!c) return;
+  const antec=+document.getElementById('agAntec').value||7;
+  const txt=montarIcs(c,antec);
+  if(!txt){ alert('Esse carro não tem data prevista de revisão.'); return; }
+  const nome='Revisao - '+nomeCarro(c).replace(/[^\w \-]/g,'').trim()+'.ics';
+  const blob=new Blob([txt],{type:'text/calendar;charset=utf-8'});
+  try{
+    const file=new File([blob],nome,{type:'text/calendar'});
+    if(navigator.canShare && navigator.canShare({files:[file]})){ await navigator.share({files:[file], title:tituloRev(c)}); return; }
+  }catch(e){}
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=nome;
+  document.body.appendChild(a); a.click();
+  setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); },1500);
+}
+function agGoogle(){
+  const c=carroById(agCarroId); if(!c) return;
+  const p=proxRevisao(c); if(!p.proxData) return;
+  const url='https://calendar.google.com/calendar/render?action=TEMPLATE'
+    +'&text='+encodeURIComponent(tituloRev(c))
+    +'&dates='+icsDia(p.proxData)+'/'+icsDia(maisDias(p.proxData,1))
+    +'&details='+encodeURIComponent(descRev(c));
+  window.open(url,'_blank','noopener');
+}
 async function shareOrSave(doc, nome, texto){
   try{ const blob=doc.output('blob'); const file=new File([blob],nome,{type:'application/pdf'});
     if(navigator.canShare && navigator.canShare({files:[file]})){ await navigator.share({files:[file], title:nome, text:texto||nome}); }
