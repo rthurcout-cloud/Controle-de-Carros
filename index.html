@@ -369,7 +369,10 @@ function renderHome(){
   let card4;
   if(urg){ const p=proxRevisao(urg);
     card4=`<div class="dcard big" onclick="abrirCarro('${urg.id}')">
-      <div class="lbl">Próxima revisão</div>
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap">
+        <div class="lbl">Próxima revisão</div>
+        <button class="btn small" onclick="event.stopPropagation();openAgenda('${urg.id}')">📅 Avisar no celular</button>
+      </div>
       <div class="carro">${esc(urg.fabricante||'')} ${esc(urg.modelo||'')} <span style="color:var(--muted);font-weight:500;font-size:16px">${esc(urg.versao||'')} ${esc(urg.ano||'')}</span></div>
       <div class="revrow">
         <div class="revbox"><div class="k">Km da última revisão</div><div class="v">${p.ultimaKm!=null?fmtKm(p.ultimaKm):(fmtKm(urg.kmAtual))}</div></div>
