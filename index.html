@@ -88,7 +88,9 @@
   .grid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(250px,1fr)); gap:14px; }
   .card{ background:var(--surface); border:1px solid var(--hair); border-radius:var(--radius); padding:17px; box-shadow:var(--sh); }
   .car-card{ position:relative; overflow:hidden; cursor:pointer; transition:transform .22s var(--ease), border-color .22s, box-shadow .22s; }
-  .car-card::before{ content:''; position:absolute; left:0; top:0; bottom:0; width:3px; background:var(--grad); }
+  /* --carcor = cor real do veículo (definida inline); sem ela, cai no gradiente padrão */
+  .car-card::before{ content:''; position:absolute; left:0; top:0; bottom:0; width:4px; background:var(--carcor, var(--grad)); }
+  .cor-dot{ display:inline-block; width:9px; height:9px; border-radius:50%; margin-right:5px; box-shadow:inset 0 0 0 1px rgba(0,0,0,.35), 0 0 0 1px rgba(255,255,255,.28); }
   .car-card:hover{ border-color:rgba(91,140,255,.4); transform:translateY(-3px); box-shadow:var(--sh-lg); }
   .car-card .nome{ font-size:16px; font-weight:700; letter-spacing:-.02em; }
   .car-card .meta{ color:var(--muted); font-size:13px; margin-top:4px; }
@@ -98,7 +100,7 @@
   .section-label{ color:var(--muted); font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:.9px; margin:20px 0 9px; }
   /* Carro detail */
   .car-head{ position:relative; overflow:hidden; background:var(--surface); border:1px solid var(--hair); border-radius:18px; padding:24px 26px; margin-bottom:18px; box-shadow:var(--sh); }
-  .car-head::before{ content:''; position:absolute; left:0; top:0; bottom:0; width:3px; background:var(--grad); }
+  .car-head::before{ content:''; position:absolute; left:0; top:0; bottom:0; width:4px; background:var(--carcor, var(--grad)); }
   .car-head .n{ font-size:25px; font-weight:800; letter-spacing:-.03em; } .car-head .m{ color:var(--muted); margin-top:4px; }
   .car-head .km{ margin-top:11px; }
   .tabs{ display:flex; gap:8px; flex-wrap:wrap; margin-bottom:18px; background:var(--surface); border:1px solid var(--hair); border-radius:14px; padding:5px; }
@@ -306,6 +308,29 @@ function anoAtual(){ return new Date().getFullYear(); }
 function carroById(id){ return db.carros.find(c=>c.id===id); }
 function oficById(id){ return db.oficinas.find(o=>o.id===id); }
 function nomeCarro(c){ return [c.fabricante,c.modelo,c.versao,c.ano,c.cor].filter(Boolean).join(' '); }
+/* cor do veículo -> cor real na faixa do card e na bolinha (aceita com/sem acento, maiúscula, masc/fem) */
+const CORES_VEIC={
+  branca:'#f8fafc',  branco:'#f8fafc',
+  prata:'#cbd5e1',   prateada:'#cbd5e1', prateado:'#cbd5e1',
+  cinza:'#9ca3af',   grafite:'#6b7280',  chumbo:'#6b7280',
+  preta:'#4b5563',   preto:'#4b5563',
+  vermelha:'#ef4444', vermelho:'#ef4444',
+  vinho:'#9f1239',   bordo:'#9f1239',
+  azul:'#3b82f6',    'azul marinho':'#1e40af',
+  verde:'#22c55e',
+  amarela:'#eab308', amarelo:'#eab308',
+  dourada:'#d4af37', dourado:'#d4af37',
+  marrom:'#a16207',  bege:'#d6c7a1',
+  laranja:'#f97316',
+  roxa:'#a855f7',    roxo:'#a855f7',
+  rosa:'#f472b6'
+};
+function corVeiculo(c){
+  // nome de cor em pt-BR não tem acento (branca, cinza, prata, preta, azul...), então basta minúsculas
+  const k=((c&&c.cor)||'').trim().toLowerCase();
+  return CORES_VEIC[k] || '';
+}
+function dotCor(c){ const cv=corVeiculo(c); return c && c.cor ? `<span class="cor-dot" style="background:${cv||'transparent'}"></span>` : ''; }
 function soDig(t){ return (t||'').replace(/\D/g,''); }
 function waLink(tel){ let d=soDig(tel); if(!d) return ''; if(d.length<=11 && !d.startsWith('55')) d='55'+d; return 'https://wa.me/'+d; }
 
@@ -420,10 +445,10 @@ function renderCarros(){
   const el=document.getElementById('view-carros');
   const cab=`<div class="toolbar"><button class="btn" onclick="openCarro()">+ Novo carro</button></div>`;
   if(!db.carros.length){ el.innerHTML=cab+`<div class="empty"><div class="big">🚗</div>Nenhum carro cadastrado.<br>Clique em <b>+ Novo carro</b>.</div>`; return; }
-  const cards=db.carros.map(c=>{ const p=proxRevisao(c);
-    return `<div class="card car-card" onclick="abrirCarro('${c.id}')">
+  const cards=db.carros.map(c=>{ const p=proxRevisao(c); const cv=corVeiculo(c);
+    return `<div class="card car-card"${cv?` style="--carcor:${cv}"`:''} onclick="abrirCarro('${c.id}')">
       <div class="nome">${esc(c.fabricante||'')} ${esc(c.modelo||'')}</div>
-      <div class="meta">${esc(c.versao||'')} · ${esc(c.ano||'')} · ${esc(c.cor||'')}${c.placa?' · '+esc(c.placa):''}</div>
+      <div class="meta">${esc(c.versao||'')} · ${esc(c.ano||'')} · ${dotCor(c)}${esc(c.cor||'')}${c.placa?' · '+esc(c.placa):''}</div>
       <div class="km">Km atual: <b>${fmtKm(c.kmAtual)}</b>${p.proxKm!=null?` · próx. rev: <b>${fmtKm(p.proxKm)}</b>`:''}</div>
     </div>`;
   }).join('');
@@ -437,10 +462,11 @@ function renderCarro(){
   document.getElementById('pgTitulo').textContent=nomeCarro(c);
   document.getElementById('pgSub').textContent='Manutenção e relatórios do veículo.';
   const p=proxRevisao(c);
-  const head=`<div class="car-head">
+  const cv=corVeiculo(c);
+  const head=`<div class="car-head"${cv?` style="--carcor:${cv}"`:''}>
     <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap">
       <div><div class="n">${esc(c.fabricante||'')} ${esc(c.modelo||'')} ${esc(c.versao||'')}</div>
-      <div class="m">${esc(c.ano||'')} · ${esc(c.cor||'')}${c.placa?' · Placa '+esc(c.placa):''}</div></div>
+      <div class="m">${esc(c.ano||'')} · ${dotCor(c)}${esc(c.cor||'')}${c.placa?' · Placa '+esc(c.placa):''}</div></div>
       <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn small" onclick="openAgenda('${c.id}')">📅 Avisar no celular</button><button class="btn secondary small" onclick="openCarro('${c.id}')">✏️ Editar</button><button class="btn secondary small" onclick="navegar('carros')">← Voltar</button></div>
     </div>
     <div class="km">Km atual: <b>${fmtKm(c.kmAtual)}</b> · Próxima revisão: <b style="color:var(--amber)">${p.proxKm!=null?fmtKm(p.proxKm):'—'}</b>${p.proxData?` · <b style="color:var(--accent)">${fmtData(p.proxData)}</b>`:''}</div>
@@ -568,9 +594,10 @@ function renderComb(){
     const lista=abastDe(c); const ult=lista[0];
     const ano=anoAtual();
     const noAno=totalAbast(c, ano+'-01-01', ano+'-12-31');
-    return `<div class="card car-card" onclick="abrirComb('${c.id}')">
+    const cv=corVeiculo(c);
+    return `<div class="card car-card"${cv?` style="--carcor:${cv}"`:''} onclick="abrirComb('${c.id}')">
       <div class="nome">${esc(c.fabricante||'')} ${esc(c.modelo||'')}</div>
-      <div class="meta">${esc(c.versao||'')} · ${esc(c.ano||'')} · ${esc(c.cor||'')}${c.placa?' · '+esc(c.placa):''}</div>
+      <div class="meta">${esc(c.versao||'')} · ${esc(c.ano||'')} · ${dotCor(c)}${esc(c.cor||'')}${c.placa?' · '+esc(c.placa):''}</div>
       <div class="km">Gasto em ${ano}: <b style="color:var(--green)">${money(noAno)}</b></div>
       <div class="km" style="margin-top:4px;color:var(--muted);font-size:12px">${ult?('Último: '+fmtData(ult.data)+' · '+money(ult.valor)+(ult.posto?' · '+esc(ult.posto):'')):'Nenhum abastecimento lançado'}</div>
     </div>`;
@@ -584,10 +611,11 @@ function renderCombCarro(){
   document.getElementById('pgTitulo').textContent='Combustível';
   document.getElementById('pgSub').textContent=nomeCarro(c);
   if(!combIni){ combIni=anoAtual()+'-01-01'; combFim=anoAtual()+'-12-31'; }
-  const head=`<div class="car-head">
+  const cv=corVeiculo(c);
+  const head=`<div class="car-head"${cv?` style="--carcor:${cv}"`:''}>
     <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap">
       <div><div class="n">${esc(c.fabricante||'')} ${esc(c.modelo||'')} ${esc(c.versao||'')}</div>
-      <div class="m">${esc(c.ano||'')} · ${esc(c.cor||'')}${c.placa?' · Placa '+esc(c.placa):''}</div></div>
+      <div class="m">${esc(c.ano||'')} · ${dotCor(c)}${esc(c.cor||'')}${c.placa?' · Placa '+esc(c.placa):''}</div></div>
       <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn small" onclick="openAbast('${c.id}')">+ Novo abastecimento</button><button class="btn secondary small" onclick="navegar('comb')">← Voltar</button></div>
     </div>
   </div>`;
