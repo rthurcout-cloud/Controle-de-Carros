@@ -191,7 +191,7 @@
   .mm-ramo.aberto > .n1 .pl { background:var(--accent); color:var(--ink); }
   .mm-ic { width:20px; height:20px; } .mm-ic.s { width:15px; height:15px; }
   .mm-no.n1 .tx { flex:1; min-width:0; display:flex; flex-direction:column; }
-  .mm-no.n1 .tx b { font-family:var(--disp); font-size:16px; font-weight:700; white-space:nowrap; } .mm-no.n1 { flex-shrink:0; max-width:214px; } .mm-wrap.arvore .mm-no.n1 { flex-shrink:1; }
+  .mm-no.n1 .tx b { font-family:var(--disp); font-size:16px; font-weight:700; white-space:nowrap; } .mm-no.n1 { flex-shrink:0; max-width:214px; } .mm-wrap.arvore .mm-no.n1 { flex-shrink:1; max-width:none; }
   .mm-no.n1 .tx small { font-size:12px; color:var(--muted); }
   .mm-no.n1 .ch { width:18px; height:18px; color:var(--muted); transition:transform .25s var(--ease); }
   .mm-ramo.aberto > .n1 .ch { transform:rotate(90deg); color:var(--accent); }
@@ -257,6 +257,16 @@
   .mm-dot { width:9px; height:9px; border-radius:50%; flex:0 0 9px; background:var(--muted); }
   .mm-dot.ok { background:var(--green); } .mm-dot.perto { background:var(--amber); } .mm-dot.atraso { background:var(--red); box-shadow:0 0 8px rgba(240,113,103,.8); }
   .mm-anel svg { width:26px; height:26px; color:var(--accent); }
+
+  /* ===== Fundo do início: circuito cinza e laranja (igual ao do APP-MEI, 30/09/2026) ===== */
+  body.fundo-home::before { content:''; position:fixed; inset:0; z-index:0; pointer-events:none;
+    background:
+      radial-gradient(700px 520px at 88% 6%, rgba(242,165,65,.22), transparent 65%),
+      radial-gradient(620px 520px at 4% 96%, rgba(120,126,136,.30), transparent 65%),
+      radial-gradient(900px 600px at 55% 50%, rgba(242,165,65,.07), transparent 70%),
+      url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='420' height='420' viewBox='0 0 420 420' fill='none'><g stroke='%23F2A541' stroke-width='1' opacity='.5'><path d='M0 60H80L105 35H190'/><path d='M420 150H330L305 125H250'/><path d='M60 420V330L85 305V250'/><path d='M230 420V360H300L325 335'/><path d='M0 250H45L70 275H150'/><path d='M360 0V70L335 95H280'/></g><g stroke='%239AA0A8' stroke-width='1' opacity='.35'><path d='M140 0V40L165 65H230'/><path d='M420 300H370L345 275H300'/><path d='M0 170H30L55 145H110'/></g><g fill='%23F2A541'><circle cx='190' cy='35' r='3'/><circle cx='250' cy='125' r='3'/><circle cx='85' cy='250' r='3'/><circle cx='325' cy='335' r='3'/><circle cx='150' cy='275' r='3'/><circle cx='280' cy='95' r='3'/></g><g fill='%239AA0A8'><circle cx='230' cy='65' r='2.5'/><circle cx='300' cy='275' r='2.5'/><circle cx='110' cy='145' r='2.5'/></g></svg>") repeat; background-size:auto, auto, auto, 420px 420px; opacity:.9; }
+  body.fundo-home::after { content:''; position:fixed; inset:0; z-index:0; pointer-events:none; background:rgba(18,20,23,.70); }
+  .main { position:relative; z-index:1; }
 </style>
 </head>
 <body>
@@ -417,6 +427,7 @@
 /* ================= Estado ================= */
 let db = { carros:[], oficinas:[], config:{} };
 let viewAtual='home', carroAbertoId=null, carroAba='manut';
+document.body.classList.add('fundo-home');
 const TIPOS=['Troca de óleo','Filtros','Freios','Pneus','Alinhamento e balanceamento','Suspensão','Bateria','Revisão geral','Correia','Elétrica','Ar-condicionado','Lavagem'];
 
 /* ================= Helpers ================= */
@@ -514,6 +525,7 @@ async function sincronizarBaixar(){
 const TITULOS={ home:['Garagem','Toque num ramo pra abrir.'], painel:['Painel da garagem','Revisões, gastos e frota da igreja.'], carros:['Carros','Veículos cadastrados.'], carro:['Carro',''], comb:['Combustível','Escolha o carro para lançar os abastecimentos.'], combcarro:['Combustível',''], oficinas:['Oficinas','Oficinas cadastradas.'], relano:['Relatório do Ano','Total de manutenções e gastos no ano.'], config:['Configurações','Identidade e backup dos dados.'] };
 function navegar(v){
   viewAtual=v;
+  document.body.classList.toggle('fundo-home', v==='home');
   document.querySelectorAll('.view').forEach(s=>s.style.display='none');
   const el=document.getElementById('view-'+v); if(el) el.style.display='';
   const navV={carro:'carros',combcarro:'comb',painel:'home'}[v]||v;
