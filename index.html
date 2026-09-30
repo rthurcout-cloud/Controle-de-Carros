@@ -191,7 +191,7 @@
   .mm-ramo.aberto > .n1 .pl { background:var(--accent); color:var(--ink); }
   .mm-ic { width:20px; height:20px; } .mm-ic.s { width:15px; height:15px; }
   .mm-no.n1 .tx { flex:1; min-width:0; display:flex; flex-direction:column; }
-  .mm-no.n1 .tx b { font-family:var(--disp); font-size:17px; font-weight:700; }
+  .mm-no.n1 .tx b { font-family:var(--disp); font-size:16px; font-weight:700; white-space:nowrap; } .mm-no.n1 { flex-shrink:0; max-width:214px; } .mm-wrap.arvore .mm-no.n1 { flex-shrink:1; }
   .mm-no.n1 .tx small { font-size:12px; color:var(--muted); }
   .mm-no.n1 .ch { width:18px; height:18px; color:var(--muted); transition:transform .25s var(--ease); }
   .mm-ramo.aberto > .n1 .ch { transform:rotate(90deg); color:var(--accent); }
@@ -607,7 +607,6 @@ let mmAbertos = null;
 function mmCelular(){ const m = document.getElementById('mapa'); const w = m && m.clientWidth ? m.clientWidth : window.innerWidth; return w < 1000; }
 function toggleRamo(id){ if (mmAbertos.has(id)) mmAbertos.delete(id); else mmAbertos.add(id); renderMapa(); }
 function nomeCarro(c){ return `${c.fabricante||''} ${c.modelo||''}`.trim() || 'Carro'; }
-function rotuloCarro(c){ return [(c.modelo||c.fabricante||'Carro'), c.placa].filter(Boolean).join(' · '); }
 function renderHome(){
   const el = document.getElementById('view-home');
   if (!document.getElementById('mapa')) el.innerHTML = '<div class="mm-wrap" id="mapa"></div>';
@@ -620,22 +619,19 @@ function renderMapa(){
   const carros = db.carros || [];
   const urg = carros.length ? carroMaisUrgente() : null;
   const su = urg ? statusRev(urg) : null;
-  const alerta = carros.filter(c => ['atraso','perto'].includes(statusRev(c).st));
   const ramos = [
-    { id:'carros', t:'Carros', sub:'Frota da igreja', lado:'esq', folhas:
-      carros.map(c => ({ t:rotuloCarro(c), dot:statusRev(c).st, act:`abrirCarro('${c.id}')` }))
-        .concat([{ t:'Novo carro', mais:true, act:"navegar('carros');openCarro()" }]) },
-    { id:'comb', t:'Combustível', sub:'Lançar abastecimento', lado:'esq', folhas:
-      carros.length ? carros.map(c => ({ t:rotuloCarro(c), act:`abrirComb('${c.id}')` })) : [{ t:'Ver combustível', act:"navegar('comb')" }] },
+    { id:'carros', t:'Carros', sub:'Frota da igreja', lado:'esq', folhas:[
+      { t:'Ver carros', act:"navegar('carros')" },
+      { t:'Novo carro', mais:true, act:"navegar('carros');openCarro()" } ] },
+    { id:'comb', t:'Combustível', sub:'Abastecimentos', lado:'esq', folhas:[
+      { t:'Lançar abastecimento', act:"navegar('comb')" } ] },
     { id:'relatorios', t:'Relatórios', sub:'Ano e backup', lado:'esq', folhas:[
       { t:'Relatório do ano', act:"navegar('relano')" },
-      { t:'Configurações e backup', act:"navegar('config')" } ] },
+      { t:'Configurações', act:"navegar('config')" } ] },
     { id:'revisao', t:'Revisões', sub:'Próximas e atrasadas', lado:'dir', folhas:
       [{ t:'Painel da garagem', act:"navegar('painel')" }]
-        .concat(alerta.length ? alerta.map(c => ({ t:`${c.modelo||nomeCarro(c)} · ${statusRev(c).st==='atraso'?'atrasada':'chegando'}`, dot:statusRev(c).st, act:`abrirCarro('${c.id}')` }))
-                              : [{ t:'Todas em dia', dot:'ok', act:"navegar('painel')" }])
         .concat(urg ? [{ t:'Avisar no celular', act:`openAgenda('${urg.id}')` }] : []) },
-    { id:'oficinas', t:'Oficinas', sub:'Onde os carros são cuidados', lado:'dir', folhas:[
+    { id:'oficinas', t:'Oficinas', sub:'Serviços da frota', lado:'dir', folhas:[
       { t:'Ver oficinas', act:"navegar('oficinas')" },
       { t:'Nova oficina', mais:true, act:"navegar('oficinas');openOfic()" } ] }
   ];
