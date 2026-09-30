@@ -1,5 +1,11 @@
 {
   "framework": null,
   "buildCommand": "echo sem build necessario",
-  "outputDirectory": "."
+  "outputDirectory": ".",
+  "crons": [
+    {
+      "path": "/api/sync-planilha",
+      "schedule": "0 10 * * *"
+    }
+  ]
 }

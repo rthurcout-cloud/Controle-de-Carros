@@ -1220,6 +1220,14 @@ function renderConfig(){
       <div class="field"><label>Nome (aparece no topo e nos PDFs)</label><input id="cfgIgreja" value="${esc(c.igreja||'Primeira Igreja Batista de Niterói')}"></div>
       <button class="btn" onclick="salvarCfg()">Salvar</button>
     </div>
+    <div class="card" style="margin-top:14px"><h3 style="margin-bottom:12px">Planilha de manutenção (Google)</h3>
+      <p style="color:var(--muted);font-size:14px;margin-bottom:12px">O que o administrador preenche na planilha aparece aqui sozinho: quando o app abre, a cada 3 minutos com o app aberto e uma vez por dia. Manutenção que veio da planilha se corrige na planilha. O que for lançado direto no app não é mexido.</p>
+      <p id="plStatus" style="font-size:14px;margin-bottom:12px">${esc(textoPlanilha())}</p>
+      <div style="display:flex;gap:10px;flex-wrap:wrap">
+        <button class="btn" onclick="sincronizarPlanilha(true)">Sincronizar agora</button>
+        <a class="btn secondary" href="${PLANILHA_URL}" target="_blank" rel="noopener" style="text-decoration:none">Abrir planilha</a>
+      </div>
+    </div>
     <div class="card" style="margin-top:14px"><h3 style="margin-bottom:12px">Backup dos dados</h3>
       <p style="color:var(--muted);font-size:14px;margin-bottom:12px">Baixe uma cópia de tudo (carros, manutenções, oficinas) ou restaure de um arquivo.</p>
       <div style="display:flex;gap:10px;flex-wrap:wrap">
@@ -1233,6 +1241,28 @@ function salvarCfg(){ db.config=Object.assign(db.config||{},{ igreja:document.ge
 function exportBk(){ const blob=new Blob([JSON.stringify(db,null,2)],{type:'application/json'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='backup-controle-carros.json'; a.click(); }
 function importBk(ev){ const f=ev.target.files[0]; if(!f) return; const r=new FileReader(); r.onload=()=>{ try{ const d=JSON.parse(r.result); if(!('carros' in d)) throw 0; if(!confirm('Isto substitui todos os dados atuais. Continuar?')) return; db=normalize(d); save(); renderAtual(); alert('Backup restaurado!'); }catch(e){ alert('Arquivo inválido.'); } }; r.readAsText(f); ev.target.value=''; }
 
+/* ================= Planilha do Google (sincronização) ================= */
+const PLANILHA_URL='https://docs.google.com/spreadsheets/d/1rtJSTgTVZ6-Kp_A_uqUN0YTBP9YYxquTkv_cvna0baI/edit';
+let planilhaRodando=false;
+async function sincronizarPlanilha(forcar){
+  if(planilhaRodando) return; planilhaRodando=true;
+  const st=document.getElementById('plStatus'); if(forcar&&st) st.textContent='Sincronizando com a planilha…';
+  try{
+    const r=await fetch('/api/sync-planilha'+(forcar?'?forcar=1':''),{method:'POST'});
+    const j=await r.json().catch(()=>({}));
+    if(j&&j.ok) await sincronizarBaixar(); // traz o que a planilha mudou (não mexe em edição pendente)
+    if(forcar&&st){ st.textContent = j.ok ? `Pronto: ${j.novos||0} nova(s), ${j.atualizados||0} atualizada(s), ${j.removidos||0} removida(s).` : 'Não consegui abrir a planilha. Confira se o link está compartilhado como "qualquer pessoa com o link".'; }
+  }catch(e){ if(forcar&&st) st.textContent='Sem conexão agora. Tente de novo.'; }
+  planilhaRodando=false;
+  if(viewAtual==='config') renderConfig();
+}
+function textoPlanilha(){
+  const p=(db.config&&db.config.planilha)||{};
+  if(!p.ultima) return 'Ainda não sincronizou.';
+  const d=new Date(p.ultima), r=p.resultado||{};
+  return `Última sincronização: ${d.toLocaleDateString('pt-BR')} às ${d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})} · ${r.linhas||0} linha(s) na planilha.`;
+}
+
 /* ================= Modais util ================= */
 function openOv(id){ document.getElementById(id).classList.add('open'); }
 function closeOv(id){ document.getElementById(id).classList.remove('open'); }
@@ -1245,6 +1275,7 @@ function closeOv(id){ document.getElementById(id).classList.remove('open'); }
   if(db.config&&db.config.igreja) document.getElementById('brandNome').textContent=db.config.igreja;
   navegar('home');
   if(ok) setInterval(sincronizarBaixar,8000);
+  if(ok){ sincronizarPlanilha(false); setInterval(()=>sincronizarPlanilha(false),180000); }
 })();
 </script>
 </body>
