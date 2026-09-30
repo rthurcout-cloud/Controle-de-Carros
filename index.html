@@ -267,6 +267,36 @@
       url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='420' height='420' viewBox='0 0 420 420' fill='none'><g stroke='%23F2A541' stroke-width='1' opacity='.5'><path d='M0 60H80L105 35H190'/><path d='M420 150H330L305 125H250'/><path d='M60 420V330L85 305V250'/><path d='M230 420V360H300L325 335'/><path d='M0 250H45L70 275H150'/><path d='M360 0V70L335 95H280'/></g><g stroke='%239AA0A8' stroke-width='1' opacity='.35'><path d='M140 0V40L165 65H230'/><path d='M420 300H370L345 275H300'/><path d='M0 170H30L55 145H110'/></g><g fill='%23F2A541'><circle cx='190' cy='35' r='3'/><circle cx='250' cy='125' r='3'/><circle cx='85' cy='250' r='3'/><circle cx='325' cy='335' r='3'/><circle cx='150' cy='275' r='3'/><circle cx='280' cy='95' r='3'/></g><g fill='%239AA0A8'><circle cx='230' cy='65' r='2.5'/><circle cx='300' cy='275' r='2.5'/><circle cx='110' cy='145' r='2.5'/></g></svg>") repeat; background-size:auto, auto, auto, 420px 420px; opacity:.9; }
   body.fundo-home::after { content:''; position:fixed; inset:0; z-index:0; pointer-events:none; background:rgba(18,20,23,.70); }
   .main { position:relative; z-index:1; }
+
+  /* ===== Tela Carros em órbita: frota no meio, carros em círculos em volta (30/09/2026) ===== */
+  .orb-wrap { position:relative; width:100%; margin:6px auto 10px; }
+  .orb-linhas { position:absolute; left:0; top:0; pointer-events:none; overflow:visible; z-index:0; }
+  .orb-anel { fill:none; stroke:#2E333B; stroke-width:1.5; stroke-dasharray:4 8; }
+  .orb-centro { position:absolute; z-index:2; transform:translate(-50%,-50%); border-radius:50%; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; gap:4px;
+    background:radial-gradient(circle at 50% 28%, rgba(242,165,65,.22), #15171B 66%); border:1.5px solid rgba(242,165,65,.6);
+    box-shadow:0 0 50px -14px rgba(242,165,65,.75), 0 24px 50px -26px rgba(0,0,0,.95); }
+  .orb-centro svg { width:30px; height:30px; color:var(--accent); }
+  .orb-centro small { font-size:10.5px; font-weight:700; letter-spacing:1.5px; text-transform:uppercase; color:var(--accent-text); }
+  .orb-centro b { font-family:var(--disp); font-size:22px; line-height:1.1; }
+  .orb-centro::after { content:''; position:absolute; inset:-9px; border-radius:50%; border:1px solid rgba(242,165,65,.25); animation:orbpulso 2.6s ease-in-out infinite; }
+  @keyframes orbpulso { 0%,100% { transform:scale(1); opacity:.9; } 50% { transform:scale(1.06); opacity:.25; } }
+  .orb-item { position:absolute; z-index:1; transform:translate(-50%,-50%); border-radius:50%; cursor:pointer; font-family:inherit; color:var(--text); padding:0 10px;
+    display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; gap:2px;
+    background:radial-gradient(circle at 50% 26%, #2C3038, #17191D 70%); border:2px solid var(--carcor, #4A505A);
+    box-shadow:0 0 0 5px rgba(18,20,23,.9), 0 16px 30px -18px rgba(0,0,0,.95);
+    transition:transform .2s var(--ease), box-shadow .2s, border-color .2s; animation:orbentra .45s var(--ease) backwards; -webkit-tap-highlight-color:transparent; }
+  @keyframes orbentra { from { opacity:0; transform:translate(-50%,-50%) scale(.6); } to { opacity:1; transform:translate(-50%,-50%) scale(1); } }
+  .orb-item b { font-family:var(--disp); font-size:15px; line-height:1.15; max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .orb-item small { font-size:11.5px; color:var(--muted); letter-spacing:.3px; white-space:nowrap; }
+  .orb-item .fab { font-size:10.5px; color:var(--muted); text-transform:uppercase; letter-spacing:1px; max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .orb-item .mm-dot { position:absolute; top:10%; right:10%; width:12px; height:12px; flex:none; border:2px solid #17191D; }
+  .orb-item.novo { border-style:dashed; border-color:rgba(242,165,65,.65); color:var(--accent-text); background:radial-gradient(circle at 50% 26%, #2B251C, #17191D 72%); }
+  .orb-item.novo svg { width:24px; height:24px; }
+  @media (hover:hover) and (pointer:fine){ .orb-item:hover { transform:translate(-50%,-50%) scale(1.08); box-shadow:0 0 0 5px rgba(18,20,23,.9), 0 0 30px -6px rgba(242,165,65,.7); border-color:var(--accent); z-index:3; } }
+  .orb-item:active, .orb-item.tocado { transform:translate(-50%,-50%) scale(.95); border-color:var(--accent-2); box-shadow:0 0 0 5px rgba(18,20,23,.9), 0 0 0 7px rgba(255,196,120,.35); }
+  .orb-wrap.pequeno .orb-item b { font-size:13px; } .orb-wrap.pequeno .orb-item small { font-size:10.5px; } .orb-wrap.pequeno .orb-item .fab { display:none; }
+  .orb-wrap.pequeno .orb-centro b { font-size:18px; } .orb-wrap.pequeno .orb-centro svg { width:24px; height:24px; }
+  @media (prefers-reduced-motion:reduce){ .orb-item, .orb-centro::after { animation:none !important; } }
 </style>
 </head>
 <body>
@@ -716,17 +746,60 @@ document.addEventListener('pointerdown', e => {
 /* ================= Carros ================= */
 function renderCarros(){
   const el=document.getElementById('view-carros');
-  const cab=`<div class="toolbar"><button class="btn" onclick="openCarro()">+ Novo carro</button></div>`;
-  if(!db.carros.length){ el.innerHTML=cab+`<div class="empty"><div class="big">🚗</div>Nenhum carro cadastrado.<br>Clique em <b>+ Novo carro</b>.</div>`; return; }
-  const cards=db.carros.map(c=>{ const p=proxRevisao(c); const cv=corVeiculo(c);
-    return `<div class="card car-card"${cv?` style="--carcor:${cv}"`:''} onclick="abrirCarro('${c.id}')">
-      <div class="nome">${esc(c.fabricante||'')} ${esc(c.modelo||'')}</div>
-      <div class="meta">${metaCarro(c)}</div>
-      <div class="km">Km atual: <b>${fmtKm(c.kmAtual)}</b>${p.proxKm!=null?` · próx. rev: <b>${fmtKm(p.proxKm)}</b>`:''}</div>
-    </div>`;
+  const icCarro='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 17h14M6 17v2M18 17v2M4 13l2-5a2 2 0 0 1 1.9-1.4h8.2A2 2 0 0 1 18 8l2 5v4H4z"/><circle cx="8" cy="14" r="1"/><circle cx="16" cy="14" r="1"/></svg>';
+  const icMais='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>';
+  const itens=db.carros.map((c,i)=>{ const cv=corVeiculo(c); const st=statusRev(c);
+    return `<button class="orb-item" data-orb style="${cv?`--carcor:${cv};`:''}animation-delay:${(i*0.05).toFixed(2)}s" onclick="abrirCarro('${c.id}')" title="${esc(nomeCarroOrb(c))} · ${esc(st.txt)}">
+      <i class="mm-dot ${st.st}"></i>${c.fabricante?`<span class="fab">${esc(c.fabricante)}</span>`:''}<b>${esc(c.modelo||c.fabricante||'Carro')}</b>${c.placa?`<small>${esc(c.placa)}</small>`:''}
+    </button>`;
   }).join('');
-  el.innerHTML=cab+`<div class="grid">${cards}</div>`;
+  el.innerHTML=`<div class="orb-wrap" id="orb">
+      <svg class="orb-linhas" id="orbLinhas" aria-hidden="true"></svg>
+      <div class="orb-centro" id="orbCentro">${icCarro}<small>PIB Niterói</small><b>Frota</b></div>
+      ${itens}
+      <button class="orb-item novo" data-orb style="animation-delay:${(db.carros.length*0.05).toFixed(2)}s" onclick="openCarro()">${icMais}<b>Novo carro</b></button>
+    </div>`;
+  if(!window._orbObs && window.ResizeObserver){ window._orbObs=new ResizeObserver(()=>posicionarOrbita()); }
+  if(window._orbObs){ window._orbObs.disconnect(); window._orbObs.observe(el); }
+  posicionarOrbita();
 }
+function nomeCarroOrb(c){ return `${c.fabricante||''} ${c.modelo||''}`.trim()||'Carro'; }
+/* coloca os círculos em volta do centro, igualmente espaçados; se não cabem na largura, a órbita estica pra baixo (oval) */
+function posicionarOrbita(){
+  const wrap=document.getElementById('orb'), svg=document.getElementById('orbLinhas'), centro=document.getElementById('orbCentro');
+  if(!wrap||!svg||!centro||!wrap.offsetParent) return;
+  const W=wrap.clientWidth, pequeno=W<620;
+  wrap.classList.toggle('pequeno', pequeno);
+  const itens=[...wrap.querySelectorAll('[data-orb]')], n=itens.length;
+  const d=pequeno?96:128, cd=pequeno?128:176, folga=pequeno?14:26;
+  let R=Math.max(n*(d+folga)/(2*Math.PI), cd/2+d/2+(pequeno?28:48));
+  const Rx=Math.min(R, (W-d)/2-6);
+  let Ry=R;
+  if(Rx<R){ Ry=Math.sqrt(Math.max(2*R*R-Rx*Rx, R*R)); }
+  const H=Math.ceil(2*Ry+d+24), cx=W/2, cy=H/2;
+  wrap.style.height=H+'px';
+  svg.setAttribute('width',W); svg.setAttribute('height',H); svg.setAttribute('viewBox',`0 0 ${W} ${H}`);
+  centro.style.left=cx+'px'; centro.style.top=cy+'px'; centro.style.width=cd+'px'; centro.style.height=cd+'px';
+  let linhas=`<ellipse class="orb-anel" cx="${cx}" cy="${cy}" rx="${Rx.toFixed(1)}" ry="${Ry.toFixed(1)}"/>`;
+  itens.forEach((it,i)=>{
+    const ang=-Math.PI/2+i*2*Math.PI/n;
+    const x=cx+Rx*Math.cos(ang), y=cy+Ry*Math.sin(ang);
+    it.style.left=x.toFixed(1)+'px'; it.style.top=y.toFixed(1)+'px'; it.style.width=d+'px'; it.style.height=d+'px';
+    // linha do centro até a borda do círculo
+    const dx=x-cx, dy=y-cy, L=Math.hypot(dx,dy)||1, ux=dx/L, uy=dy/L;
+    const x1=cx+ux*cd/2, y1=cy+uy*cd/2, x2=x-ux*d/2, y2=y-uy*d/2;
+    const path=`M${x1.toFixed(1)} ${y1.toFixed(1)}L${x2.toFixed(1)} ${y2.toFixed(1)}`;
+    linhas+=`<path class="mm-l n1" data-r="o${i}" d="${path}"/><path class="mm-f n1" data-r="o${i}" d="${path}"/>`;
+    it.onmouseenter=()=>svg.querySelectorAll(`[data-r="o${i}"]`).forEach(x=>x.classList.add('on'));
+    it.onmouseleave=()=>svg.querySelectorAll('[data-r]').forEach(x=>x.classList.remove('on'));
+  });
+  svg.innerHTML=linhas;
+}
+document.addEventListener('pointerdown', e => {
+  if (e.pointerType === 'mouse') return;
+  const b = e.target.closest('.orb-item'); if (!b) return;
+  b.classList.add('tocado'); setTimeout(() => b.classList.remove('tocado'), 280);
+});
 function abrirCarro(id){ carroAbertoId=id; carroAba='manut'; navegar('carro'); }
 
 function renderCarro(){
