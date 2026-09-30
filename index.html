@@ -20,6 +20,7 @@
     --amber:#F2A541; --amber-soft:rgba(242,165,65,.12);
     --red:#F07167; --red-soft:rgba(240,113,103,.12);
     --blue:#7DB4F0;
+    --accent-2:#FFC478; --accent-text:#F7B85E; --ink:#121417;
     --radius:18px;
     --hair:#2A2E35;
     --sh:0 1px 0 rgba(255,255,255,.02);
@@ -168,6 +169,94 @@
     .car-head .n{ font-size:24px; }
   }
   @media (prefers-reduced-motion:reduce){ *{ animation:none !important; transition:none !important; } }
+  /* ===== Início em mapa mental (30/09/2026, igual ao PIB News) ===== */
+  .mm-wrap { position:relative; width:100%; }
+  .mm { position:relative; display:grid; grid-template-columns:minmax(0,1fr) minmax(240px,270px) minmax(0,1fr); gap:0 34px; align-items:center; min-height:560px; padding:10px 0 20px; }
+  .mm-linhas { position:absolute; left:0; top:0; pointer-events:none; overflow:visible; z-index:0; }
+  .mm-l { fill:none; stroke:#363B44; stroke-width:2; transition:stroke .2s; }
+  .mm-l.n1 { stroke:#4A505A; stroke-width:2.5; }
+  .mm-f { fill:none; stroke:var(--accent-2); stroke-width:2; stroke-dasharray:3 22; opacity:0; transition:opacity .2s; }
+  .mm-l.on { stroke:var(--accent); }
+  .mm-f.on { opacity:1; animation:mmfluxo 1.2s linear infinite; filter:drop-shadow(0 0 4px rgba(242,165,65,.9)); }
+  @keyframes mmfluxo { to { stroke-dashoffset:-25; } }
+  .mm-col { position:relative; z-index:1; display:flex; flex-direction:column; gap:30px; min-width:0; }
+  .mm-ramo { display:flex; align-items:center; gap:24px; }
+  .mm-ramo.esq { flex-direction:row-reverse; }
+  .mm-no { font-family:inherit; cursor:pointer; color:var(--text); transition:transform .18s var(--ease), border-color .18s, background .18s, box-shadow .18s; }
+  .mm-no.n1 { display:flex; align-items:center; gap:12px; min-width:168px; padding:11px 12px; border-radius:18px; text-align:left;
+    background:linear-gradient(160deg,#262A31,#1A1D22); border:1px solid #2E333B; box-shadow:0 12px 26px -18px rgba(0,0,0,.9); }
+  .mm-no.n1:hover { transform:translateY(-2px); border-color:rgba(242,165,65,.6); box-shadow:0 0 26px -10px rgba(242,165,65,.8); }
+  .mm-ramo.aberto > .n1 { border-color:var(--accent); box-shadow:0 0 0 1px rgba(242,165,65,.35) inset, 0 0 26px -12px rgba(242,165,65,.9); }
+  .mm-no.n1 .pl { width:42px; height:42px; flex:0 0 42px; border-radius:13px; display:flex; align-items:center; justify-content:center; color:var(--accent); background:rgba(242,165,65,.12); border:1px solid rgba(242,165,65,.35); }
+  .mm-ramo.aberto > .n1 .pl { background:var(--accent); color:var(--ink); }
+  .mm-ic { width:20px; height:20px; } .mm-ic.s { width:15px; height:15px; }
+  .mm-no.n1 .tx { flex:1; min-width:0; display:flex; flex-direction:column; }
+  .mm-no.n1 .tx b { font-family:var(--disp); font-size:17px; font-weight:700; }
+  .mm-no.n1 .tx small { font-size:12px; color:var(--muted); }
+  .mm-no.n1 .ch { width:18px; height:18px; color:var(--muted); transition:transform .25s var(--ease); }
+  .mm-ramo.aberto > .n1 .ch { transform:rotate(90deg); color:var(--accent); }
+  .mm-ramo.esq .n1 .ch { order:-1; transform:rotate(180deg); } .mm-ramo.esq.aberto .n1 .ch { transform:rotate(90deg); }
+  .mm-folhas { display:flex; flex-direction:column; gap:8px; }
+  .mm-ramo:not(.aberto) .mm-folhas { display:none; }
+  .mm-ramo.aberto .mm-folhas > * { animation:mmsai .32s var(--ease) both; }
+  .mm-ramo.aberto .mm-folhas > *:nth-child(2) { animation-delay:.04s; } .mm-ramo.aberto .mm-folhas > *:nth-child(3) { animation-delay:.08s; } .mm-ramo.aberto .mm-folhas > *:nth-child(4) { animation-delay:.12s; }
+  @keyframes mmsai { from { opacity:0; transform:scale(.9) translateX(var(--mmdx,-10px)); } to { opacity:1; transform:none; } }
+  .mm-ramo.esq .mm-folhas { --mmdx:10px; align-items:flex-end; }
+  .mm-no.n2 { display:inline-flex; align-items:center; gap:8px; min-height:40px; padding:0 14px; border-radius:99px; font-size:13.5px; font-weight:500;
+    background:#23272E; border:1px solid #363B44; white-space:nowrap; max-width:185px; }
+  .mm-no.n2 .t { overflow:hidden; text-overflow:ellipsis; }
+  .mm-no.n2 .n { min-width:24px; padding:1px 8px; border-radius:99px; text-align:center; font-weight:700; font-size:12px; color:var(--accent-text); background:rgba(242,165,65,.14); overflow:hidden; text-overflow:ellipsis; max-width:130px; }
+  .mm-no.n2:hover { border-color:var(--accent); transform:translateX(3px); background:#2B3038; }
+  .mm-ramo.esq .mm-no.n2:hover { transform:translateX(-3px); }
+  .mm-no.n2.mais { border-style:dashed; border-color:rgba(242,165,65,.6); color:var(--accent-text); }
+  .mm-centro { position:relative; z-index:2; display:flex; flex-direction:column; align-items:center; text-align:center; gap:6px; padding:28px 22px 22px; border-radius:28px;
+    background:radial-gradient(circle at 50% 18%, rgba(242,165,65,.20), #15171B 62%); border:1px solid rgba(242,165,65,.55); box-shadow:0 0 50px -16px rgba(242,165,65,.8), 0 30px 60px -30px rgba(0,0,0,.95); }
+  .mm-anel { width:58px; height:58px; border-radius:50%; border:2px solid rgba(242,165,65,.5); display:flex; align-items:center; justify-content:center; margin-bottom:6px; animation:mmpulso 2.4s ease-in-out infinite; }
+  .mm-anel i { width:20px; height:20px; border-radius:50%; background:var(--rec); box-shadow:0 0 14px 3px rgba(242,165,65,.6); }
+  @keyframes mmpulso { 0%,100% { box-shadow:0 0 0 0 rgba(242,165,65,.35); } 50% { box-shadow:0 0 0 12px rgba(242,165,65,0); } }
+  .mm-centro small { font-size:11px; font-weight:700; letter-spacing:1.6px; text-transform:uppercase; color:var(--accent-text); }
+  .mm-centro h2 { margin:0; font-family:var(--disp); font-size:25px; font-weight:700; }
+  .mm-centro .prox { margin:4px 0 6px; font-size:13px; color:var(--muted); line-height:1.4; }
+  .mm-centro .prox b { color:var(--text); }
+  .mm-num { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px; width:100%; margin-bottom:10px; }
+  .mm-num span { display:flex; flex-direction:column; padding:8px 4px; border-radius:12px; background:#1A1D22; border:1px solid #2E333B; font-size:11px; color:var(--muted); }
+  .mm-num b { font-family:var(--disp); font-size:20px; color:var(--text); }
+  .mm-centro .btn { width:100%; }
+  
+  .mm-wrap.arvore { max-width:680px; margin:0 auto; }
+  .mm-wrap.arvore .mm { display:flex; flex-direction:column; align-items:stretch; gap:0; min-height:0; }
+  .mm-wrap.arvore .mm-centro { order:-1; margin-bottom:26px; }
+  .mm-wrap.arvore .mm-col { gap:14px; padding-left:44px; margin-bottom:14px; }
+  .mm-wrap.arvore .mm-ramo, .mm-wrap.arvore .mm-ramo.esq { flex-direction:column; align-items:stretch; gap:10px; }
+  .mm-wrap.arvore .mm-ramo.esq .n1 .ch, .mm-wrap.arvore .mm-ramo .n1 .ch { order:2; transform:none; } .mm-ramo.aberto .n1 .ch { transform:rotate(90deg); }
+  .mm-wrap.arvore .mm-no.n1 { min-width:0; }
+  .mm-wrap.arvore .mm-folhas, .mm-wrap.arvore .mm-ramo.esq .mm-folhas { align-items:stretch; padding-left:44px; --mmdx:-10px; }
+  .mm-wrap.arvore .mm-no.n2 { max-width:none; justify-content:space-between; }
+  .mm-wrap.arvore .mm-no.n2:hover, .mm-wrap.arvore .mm-ramo.esq .mm-no.n2:hover { transform:none; }
+
+  @media (prefers-reduced-motion:reduce){ .mm-anel, .mm-f.on, .mm-ramo.aberto .mm-folhas > * { animation:none !important; } }
+
+  /* ===== Animação dos botões da tela principal (30/09/2026) ===== */
+  .mm-no, .mm-centro .btn { -webkit-tap-highlight-color: transparent; }
+  /* computador (tem mouse): zoom leve ao passar o mouse */
+  @media (hover:hover) and (pointer:fine) {
+    .mm-no.n1:hover { transform:scale(1.06); }
+    .mm-no.n2:hover, .mm-ramo.esq .mm-no.n2:hover { transform:scale(1.08); }
+    .mm-centro .btn:hover { transform:scale(1.04); }
+    .mm-no.n1:active, .mm-no.n2:active { transform:scale(1.02); }
+  }
+  /* celular (toque): o botão acende e afunda um pouco quando é tocado */
+  @media (hover:none), (pointer:coarse) {
+    .mm-no.n1:hover, .mm-no.n2:hover { transform:none; }
+    .mm-no.n1:active, .mm-no.n1.tocado { transform:scale(.97); border-color:var(--accent-2); background:linear-gradient(160deg, rgba(242,165,65,.28), rgba(242,165,65,.10)); box-shadow:0 0 0 2px rgba(255,196,120,.35); }
+    .mm-no.n2:active, .mm-no.n2.tocado { transform:scale(.97); border-color:var(--accent-2); background:rgba(242,165,65,.28); color:#fff; }
+    .mm-centro .btn:active, .mm-centro .btn.tocado { transform:scale(.97); filter:brightness(1.1); }
+  }
+  @media (prefers-reduced-motion:reduce){ .mm-no:hover, .mm-no:active, .mm-no.tocado, .mm-centro .btn:hover { transform:none !important; } }
+
+  .mm-dot { width:9px; height:9px; border-radius:50%; flex:0 0 9px; background:var(--muted); }
+  .mm-dot.ok { background:var(--green); } .mm-dot.perto { background:var(--amber); } .mm-dot.atraso { background:var(--red); box-shadow:0 0 8px rgba(240,113,103,.8); }
+  .mm-anel svg { width:26px; height:26px; color:var(--accent); }
 </style>
 </head>
 <body>
@@ -194,6 +283,7 @@
     <div class="page-sub" id="pgSub">Controle de manutenção da frota.</div>
 
     <section id="view-home" class="view"></section>
+    <section id="view-painel" class="view" style="display:none"></section>
     <section id="view-carros" class="view" style="display:none"></section>
     <section id="view-carro" class="view" style="display:none"></section>
     <section id="view-comb" class="view" style="display:none"></section>
@@ -421,12 +511,12 @@ async function sincronizarBaixar(){
 }
 
 /* ================= Navegação ================= */
-const TITULOS={ home:['Garagem','Revisões, gastos e frota da igreja.'], carros:['Carros','Veículos cadastrados.'], carro:['Carro',''], comb:['Combustível','Escolha o carro para lançar os abastecimentos.'], combcarro:['Combustível',''], oficinas:['Oficinas','Oficinas cadastradas.'], relano:['Relatório do Ano','Total de manutenções e gastos no ano.'], config:['Configurações','Identidade e backup dos dados.'] };
+const TITULOS={ home:['Garagem','Toque num ramo pra abrir.'], painel:['Painel da garagem','Revisões, gastos e frota da igreja.'], carros:['Carros','Veículos cadastrados.'], carro:['Carro',''], comb:['Combustível','Escolha o carro para lançar os abastecimentos.'], combcarro:['Combustível',''], oficinas:['Oficinas','Oficinas cadastradas.'], relano:['Relatório do Ano','Total de manutenções e gastos no ano.'], config:['Configurações','Identidade e backup dos dados.'] };
 function navegar(v){
   viewAtual=v;
   document.querySelectorAll('.view').forEach(s=>s.style.display='none');
   const el=document.getElementById('view-'+v); if(el) el.style.display='';
-  const navV={carro:'carros',combcarro:'comb'}[v]||v;
+  const navV={carro:'carros',combcarro:'comb',painel:'home'}[v]||v;
   document.querySelectorAll('.nav-item,.bnav button').forEach(x=>x.classList.toggle('active', x.dataset.view===navV));
   document.getElementById('pgTitulo').textContent=TITULOS[v]?TITULOS[v][0]:'';
   document.getElementById('pgSub').textContent=TITULOS[v]?TITULOS[v][1]:'';
@@ -436,6 +526,7 @@ function navegar(v){
 }
 function renderAtual(){
   if(viewAtual==='home') renderHome();
+  else if(viewAtual==='painel') renderPainel();
   else if(viewAtual==='carros') renderCarros();
   else if(viewAtual==='carro') renderCarro();
   else if(viewAtual==='comb') renderComb();
@@ -463,8 +554,8 @@ function statusRev(c){
   }
   return { p, faltaKm, dias, st, txt, prog };
 }
-function renderHome(){
-  const el=document.getElementById('view-home');
+function renderPainel(){
+  const el=document.getElementById('view-painel');
   if(!db.carros.length){ el.innerHTML=`<div class="empty">Nenhum carro cadastrado ainda.<br><br><button class="btn" onclick="navegar('carros')">Cadastrar carro</button></div>`; return; }
   const urg=carroMaisUrgente(); const s=statusRev(urg); const p=s.p;
   const C=326.7, off=(C*(1-(s.prog||0))).toFixed(1);
@@ -500,6 +591,119 @@ function renderHome(){
   }).join('');
   el.innerHTML=`<div class="home"><div>${rev}<div style="height:12px"></div>${stats}</div><div><div class="sec-title">Frota</div><div class="frota">${frota}</div></div></div>`;
 }
+
+/* ================= Início: mapa mental interativo (igual ao PIB News) ================= */
+const MM_IC = {
+  carros: '<path d="M5 17h14M6 17v2M18 17v2M4 13l2-5a2 2 0 0 1 1.9-1.4h8.2A2 2 0 0 1 18 8l2 5v4H4z"/><circle cx="8" cy="14" r="1"/><circle cx="16" cy="14" r="1"/>',
+  comb: '<path d="M4 21V5a2 2 0 0 1 2-2h7a2 2 0 0 1 2 2v16M3 21h13M7 8h5"/><path d="M15 10h2a2 2 0 0 1 2 2v5a1.5 1.5 0 0 0 3 0V9l-3-3"/>',
+  revisao: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+  oficinas: '<path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2.4-.6-.6-2.4z"/>',
+  relatorios: '<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>',
+  mais: '<path d="M12 5v14M5 12h14"/>',
+  seta: '<path d="M9 6l6 6-6 6"/>'
+};
+function mmIco(k, c){ return `<svg class="${c||'mm-ic'}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${MM_IC[k]}</svg>`; }
+let mmAbertos = null;
+function mmCelular(){ const m = document.getElementById('mapa'); const w = m && m.clientWidth ? m.clientWidth : window.innerWidth; return w < 1000; }
+function toggleRamo(id){ if (mmAbertos.has(id)) mmAbertos.delete(id); else mmAbertos.add(id); renderMapa(); }
+function nomeCarro(c){ return `${c.fabricante||''} ${c.modelo||''}`.trim() || 'Carro'; }
+function rotuloCarro(c){ return [(c.modelo||c.fabricante||'Carro'), c.placa].filter(Boolean).join(' · '); }
+function renderHome(){
+  const el = document.getElementById('view-home');
+  if (!document.getElementById('mapa')) el.innerHTML = '<div class="mm-wrap" id="mapa"></div>';
+  renderMapa();
+}
+function renderMapa(){
+  const el = document.getElementById('mapa'); if (!el) return;
+  el.classList.toggle('arvore', mmCelular());
+  if (!mmAbertos) mmAbertos = new Set(mmCelular() ? [] : ['carros','comb','revisao','oficinas','relatorios']);
+  const carros = db.carros || [];
+  const urg = carros.length ? carroMaisUrgente() : null;
+  const su = urg ? statusRev(urg) : null;
+  const alerta = carros.filter(c => ['atraso','perto'].includes(statusRev(c).st));
+  const ramos = [
+    { id:'carros', t:'Carros', sub:'Frota da igreja', lado:'esq', folhas:
+      carros.map(c => ({ t:rotuloCarro(c), dot:statusRev(c).st, act:`abrirCarro('${c.id}')` }))
+        .concat([{ t:'Novo carro', mais:true, act:"navegar('carros');openCarro()" }]) },
+    { id:'comb', t:'Combustível', sub:'Lançar abastecimento', lado:'esq', folhas:
+      carros.length ? carros.map(c => ({ t:rotuloCarro(c), act:`abrirComb('${c.id}')` })) : [{ t:'Ver combustível', act:"navegar('comb')" }] },
+    { id:'relatorios', t:'Relatórios', sub:'Ano e backup', lado:'esq', folhas:[
+      { t:'Relatório do ano', act:"navegar('relano')" },
+      { t:'Configurações e backup', act:"navegar('config')" } ] },
+    { id:'revisao', t:'Revisões', sub:'Próximas e atrasadas', lado:'dir', folhas:
+      [{ t:'Painel da garagem', act:"navegar('painel')" }]
+        .concat(alerta.length ? alerta.map(c => ({ t:`${c.modelo||nomeCarro(c)} · ${statusRev(c).st==='atraso'?'atrasada':'chegando'}`, dot:statusRev(c).st, act:`abrirCarro('${c.id}')` }))
+                              : [{ t:'Todas em dia', dot:'ok', act:"navegar('painel')" }])
+        .concat(urg ? [{ t:'Avisar no celular', act:`openAgenda('${urg.id}')` }] : []) },
+    { id:'oficinas', t:'Oficinas', sub:'Onde os carros são cuidados', lado:'dir', folhas:[
+      { t:'Ver oficinas', act:"navegar('oficinas')" },
+      { t:'Nova oficina', mais:true, act:"navegar('oficinas');openOfic()" } ] }
+  ];
+  const folha = f => `<button class="mm-no n2${f.mais?' mais':''}" data-folha onclick="${f.act}">${f.mais?mmIco('mais','mm-ic s'):''}${f.dot?`<i class="mm-dot ${f.dot}"></i>`:''}<span class="t">${esc(f.t)}</span></button>`;
+  const ramo = r => `<div class="mm-ramo ${r.lado}${mmAbertos.has(r.id)?' aberto':''}" data-ramo="${r.id}">
+      <button class="mm-no n1" data-n1 aria-expanded="${mmAbertos.has(r.id)}" onclick="toggleRamo('${r.id}')">
+        <span class="pl">${mmIco(r.id)}</span><span class="tx"><b>${r.t}</b><small>${esc(r.sub)}</small></span>${mmIco('seta','mm-ic ch')}
+      </button>
+      <div class="mm-folhas">${r.folhas.map(folha).join('')}</div>
+    </div>`;
+  let prox = 'Nenhum carro cadastrado';
+  if (urg) {
+    const p = su.p, quando = p.proxData ? fmtData(p.proxData) : (p.proxKm != null ? fmtKm(p.proxKm) : '');
+    prox = `Próxima revisão: <b>${esc(nomeCarro(urg))}</b>${urg.placa?' · '+esc(urg.placa):''}<br>${quando ? esc(quando) + ' · ' : ''}${esc(su.txt)}`;
+  }
+  el.innerHTML = `<div class="mm" id="mm">
+      <svg class="mm-linhas" id="mmLinhas" aria-hidden="true"></svg>
+      <div class="mm-col esq">${ramos.filter(r=>r.lado==='esq').map(ramo).join('')}</div>
+      <div class="mm-centro" id="mmCentro">
+        <div class="mm-anel">${mmIco('carros')}</div>
+        <small>PIB Niterói</small><h2>Garagem PIBN</h2>
+        <p class="prox">${prox}</p>
+        ${urg ? `<button class="btn" onclick="abrirCarro('${urg.id}')">Ver próxima revisão</button>` : `<button class="btn" onclick="navegar('carros');openCarro()">${mmIco('mais','ico')} Cadastrar carro</button>`}
+      </div>
+      <div class="mm-col dir">${ramos.filter(r=>r.lado==='dir').map(ramo).join('')}</div>
+    </div>`;
+  el.querySelectorAll('.mm-ramo').forEach(r => {
+    r.addEventListener('mouseenter', () => document.querySelectorAll(`#mmLinhas [data-r="${r.dataset.ramo}"]`).forEach(x=>x.classList.add('on')));
+    r.addEventListener('mouseleave', () => document.querySelectorAll(`#mmLinhas [data-r]`).forEach(x=>x.classList.remove('on')));
+  });
+  if (!window._mmObs && window.ResizeObserver){ window._mmObs = new ResizeObserver(()=>desenharMapa()); }
+  if (window._mmObs){ window._mmObs.disconnect(); window._mmObs.observe(el); el.querySelectorAll('.mm-folhas').forEach(f=>window._mmObs.observe(f)); }
+  requestAnimationFrame(desenharMapa);
+}
+function desenharMapa(){
+  const wrap = document.getElementById('mapa'), mm = document.getElementById('mm'), svg = document.getElementById('mmLinhas'), c = document.getElementById('mmCentro');
+  if (!wrap || !mm || !svg || !c || !mm.offsetParent) return;
+  const cel = mmCelular();
+  if (wrap.classList.contains('arvore') !== cel) { wrap.classList.toggle('arvore', cel); }
+  const B = mm.getBoundingClientRect();
+  svg.setAttribute('width', B.width); svg.setAttribute('height', B.height); svg.setAttribute('viewBox', `0 0 ${B.width} ${B.height}`);
+  const R = e => { const r = e.getBoundingClientRect(); return { l:r.left-B.left, r:r.right-B.left, t:r.top-B.top, b:r.bottom-B.top, cx:(r.left+r.right)/2-B.left, cy:(r.top+r.bottom)/2-B.top }; };
+  const C = R(c); let out = '';
+  const curva = (x1,y1,x2,y2) => { const k=(x2-x1)*0.5; return `M${x1.toFixed(1)} ${y1.toFixed(1)}C${(x1+k).toFixed(1)} ${y1.toFixed(1)} ${(x2-k).toFixed(1)} ${y2.toFixed(1)} ${x2.toFixed(1)} ${y2.toFixed(1)}`; };
+  const cotovelo = (x,y1,x2,y2) => `M${x.toFixed(1)} ${y1.toFixed(1)}V${(y2-10).toFixed(1)}Q${x.toFixed(1)} ${y2.toFixed(1)} ${(x+10).toFixed(1)} ${y2.toFixed(1)}H${x2.toFixed(1)}`;
+  const linha = (d, rid, n) => `<path class="mm-l n${n}" data-r="${rid}" d="${d}"/><path class="mm-f n${n}" data-r="${rid}" d="${d}"/>`;
+  mm.querySelectorAll('.mm-ramo').forEach(r => {
+    const rid = r.dataset.ramo, n1 = R(r.querySelector('[data-n1]'));
+    if (cel) out += linha(cotovelo(C.l+22, C.b, n1.l, n1.cy), rid, 1);
+    else if (r.classList.contains('esq')) out += linha(curva(C.l, C.cy, n1.r, n1.cy), rid, 1);
+    else out += linha(curva(C.r, C.cy, n1.l, n1.cy), rid, 1);
+    if (!r.classList.contains('aberto')) return;
+    r.querySelectorAll('[data-folha]').forEach(f => {
+      const L = R(f);
+      if (cel) out += linha(cotovelo(n1.l+22, n1.b, L.l, L.cy), rid, 2);
+      else if (r.classList.contains('esq')) out += linha(curva(n1.l, n1.cy, L.r, L.cy), rid, 2);
+      else out += linha(curva(n1.r, n1.cy, L.l, L.cy), rid, 2);
+    });
+  });
+  svg.innerHTML = out;
+}
+window.addEventListener('resize', () => { clearTimeout(window._mmT); window._mmT = setTimeout(desenharMapa, 80); });
+/* toque no celular: marca o botão por um instante pra pessoa ver que foi selecionado */
+document.addEventListener('pointerdown', e => {
+  if (e.pointerType === 'mouse') return;
+  const b = e.target.closest('.mm-no, .mm-centro .btn'); if (!b) return;
+  b.classList.add('tocado'); setTimeout(() => b.classList.remove('tocado'), 280);
+});
 
 /* ================= Carros ================= */
 function renderCarros(){
