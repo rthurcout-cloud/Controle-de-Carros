@@ -895,7 +895,9 @@ function salvarCarro(){
   if(id){ Object.assign(carroById(id),obj); } else { obj.id=uid('car'); obj.manutencoes=[]; db.carros.push(obj); }
   save(); closeOv('ovCarro'); renderAtual();
 }
-function excluirCarro(){ const id=document.getElementById('cId').value; if(!confirm('Excluir este carro e todas as manutenções dele?')) return; db.carros=db.carros.filter(c=>c.id!==id); save(); closeOv('ovCarro'); navegar('carros'); }
+function excluirCarro(){ const id=document.getElementById('cId').value; if(!confirm('Excluir este carro e todas as manutenções dele?')) return; const cx=carroById(id); marcarApagado('carrosApagados',id); ((cx&&cx.manutencoes)||[]).forEach(m=>marcarApagado('manutApagadas',m.id)); db.carros=db.carros.filter(c=>c.id!==id); save(); closeOv('ovCarro'); navegar('carros'); }
+// avisa o servidor do que foi apagado de propósito (o servidor não apaga nada só porque um aparelho desatualizado não tinha)
+function marcarApagado(lista,id){ db.config=db.config||{}; const l=db.config[lista]=(db.config[lista]||[]); if(l.indexOf(id)<0) l.push(id); if(l.length>300) l.splice(0,l.length-300); }
 
 /* ---- CRUD manutenção ---- */
 function openManut(carroId, id){
@@ -927,7 +929,7 @@ function salvarManut(){
   if(obj.km && (+obj.km > (+c.kmAtual||0))) c.kmAtual=obj.km;
   save(); closeOv('ovManut'); renderAtual();
 }
-function excluirManut(){ const carroId=document.getElementById('mCarro').value, id=document.getElementById('mId').value; const c=carroById(carroId); if(!c) return; if(!confirm('Excluir esta manutenção?')) return; c.manutencoes=(c.manutencoes||[]).filter(x=>x.id!==id); save(); closeOv('ovManut'); renderAtual(); }
+function excluirManut(){ const carroId=document.getElementById('mCarro').value, id=document.getElementById('mId').value; const c=carroById(carroId); if(!c) return; if(!confirm('Excluir esta manutenção?')) return; marcarApagado('manutApagadas',id); c.manutencoes=(c.manutencoes||[]).filter(x=>x.id!==id); save(); closeOv('ovManut'); renderAtual(); }
 
 /* ================= Combustível (só gastos: data, litros, valor, posto) ================= */
 let combCarroId='', combIni='', combFim='';

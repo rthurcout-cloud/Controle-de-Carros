@@ -13,6 +13,7 @@ const KV_TOKEN = process.env.KV_REST_API_TOKEN || process.env.UPSTASH_REDIS_REST
 const DATA_KEY = 'controle-carros:data';
 const PLANILHA_ID = process.env.PLANILHA_ID || '1rtJSTgTVZ6-Kp_A_uqUN0YTBP9YYxquTkv_cvna0baI';
 const INTERVALO_MIN_MS = 60 * 1000; // não baixa de novo se sincronizou há menos de 1 minuto
+const ESPERA_ESCRITA_MS = 15 * 60 * 1000; // o que o app escreveu na planilha nos últimos 15 min não é mexido pela leitura
 
 async function kv(command) {
   const r = await fetch(KV_URL, { method: 'POST', headers: { Authorization: 'Bearer ' + KV_TOKEN, 'Content-Type': 'application/json' }, body: JSON.stringify(command) });
@@ -82,7 +83,8 @@ function lerPlanilha(buf) {
       if (!proxData && String(renD).trim()) obs.push(String(renD).trim());
       if (proxKm == null && String(renK).trim() && norm(renK) !== norm(renD)) obs.push('km: ' + String(renK).trim());
       const km = numero(r[col.km]), valor = numero(r[col.valor]);
-      linhas.push({ aba, data, veiculo: vei, desc, oficina: (oficina || '').trim(), nf, km: km == null ? '' : String(Math.round(km)), valor: valor == null ? 0 : Math.round(valor * 100) / 100,
+      linhas.push({ aba, data, veiculo: vei, desc, exec, renTexto: proxData ? '' : String(renD || '').trim(), renKmTexto: proxKm == null ? String(renK || '').trim() : '',
+                    oficina: (oficina || '').trim(), nf, km: km == null ? '' : String(Math.round(km)), valor: valor == null ? 0 : Math.round(valor * 100) / 100,
                     proxData, proxKm: proxKm == null ? '' : String(Math.round(proxKm)), obsRen: obs.join('; '),
                     chave: norm(`${data}|${vei}|${desc}`) });
     }
@@ -140,14 +142,18 @@ function mesclar(db, linhas) {
          || carro.manutencoes.find(x => !x.chavePlanilha && x.data === l.data && Math.abs((+x.valor || 0) - l.valor) < 0.01);
     const desc = descricaoDe(l);
     const campos = { data: l.data, km: l.km, oficinaId: oficinaDe(l.oficina), valor: l.valor, proxKm: l.proxKm, proxData: l.proxData };
+    const recente = m && m.escritoEm && Date.now() - m.escritoEm < ESPERA_ESCRITA_MS; // o app acabou de escrever: a planilha ainda pode estar atrasada
+    if (m && recente) { m.chavePlanilha = l.chave; return; }
     if (m) {
       const antes = JSON.stringify(m);
       Object.assign(m, campos);
       if (!m.descricao || m.descricao === m.descPlanilha) m.descricao = desc; // não sobrescreve texto editado no app
       m.descPlanilha = desc; m.chavePlanilha = l.chave; m.origem = 'planilha';
+      m.linhaPlanilha = { data: l.data, veiculo: l.veiculo, desc: l.desc, exec: l.exec, oficinaId: campos.oficinaId, renTexto: l.renTexto, renKmTexto: l.renKmTexto };
       if (JSON.stringify(m) !== antes) res.atualizados++;
     } else {
-      carro.manutencoes.push(Object.assign({ id: uid('mn'), tipo: tipoDe(l.desc), descricao: desc, descPlanilha: desc, chavePlanilha: l.chave, origem: 'planilha' }, campos));
+      carro.manutencoes.push(Object.assign({ id: uid('mn'), tipo: tipoDe(l.desc), descricao: desc, descPlanilha: desc, chavePlanilha: l.chave, origem: 'planilha',
+        linhaPlanilha: { data: l.data, veiculo: l.veiculo, desc: l.desc, exec: l.exec, oficinaId: campos.oficinaId, renTexto: l.renTexto, renKmTexto: l.renKmTexto } }, campos));
       res.novos++;
     }
     if (l.km && (+l.km) > (+carro.kmAtual || 0)) carro.kmAtual = l.km;
@@ -156,7 +162,7 @@ function mesclar(db, linhas) {
   // 4) linhas apagadas da planilha somem do app (só as que vieram da planilha)
   db.carros.forEach(c => {
     const antes = (c.manutencoes || []).length;
-    c.manutencoes = (c.manutencoes || []).filter(m => m.origem !== 'planilha' || vistas.has(m.chavePlanilha));
+    c.manutencoes = (c.manutencoes || []).filter(m => m.origem !== 'planilha' || vistas.has(m.chavePlanilha) || (m.escritoEm && Date.now() - m.escritoEm < ESPERA_ESCRITA_MS));
     res.removidos += antes - c.manutencoes.length;
   });
   return res;

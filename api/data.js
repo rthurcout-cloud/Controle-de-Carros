@@ -4,6 +4,7 @@
 const KV_URL = process.env.KV_REST_API_URL || process.env.UPSTASH_REDIS_REST_URL;
 const KV_TOKEN = process.env.KV_REST_API_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN;
 const DATA_KEY = 'controle-carros:data';
+const { espelhar } = require('./_planilha');
 
 async function kv(command) {
   const res = await fetch(KV_URL, {
@@ -26,6 +27,7 @@ module.exports = async (req, res) => {
     if (req.method === 'GET') {
       const out = await kv(['GET', DATA_KEY]);
       const data = out && out.result ? JSON.parse(out.result) : { carros: [], oficinas: [], config: {} };
+      if (data.config) delete data.config.planilhaEscrita; // endereço e senha da ponte com a planilha não saem do servidor
       res.setHeader('Cache-Control', 'no-store');
       res.status(200).json(data);
       return;
@@ -39,8 +41,17 @@ module.exports = async (req, res) => {
         oficinas: Array.isArray(body.oficinas) ? body.oficinas : [],
         config: (body.config && typeof body.config === 'object') ? body.config : {}
       };
+      // app -> planilha: manda pra planilha do Google o que foi lançado, editado ou apagado agora
+      let planilha = null;
+      try {
+        const atual = await kv(['GET', DATA_KEY]);
+        const velho = atual && atual.result ? JSON.parse(atual.result) : { carros: [], config: {} };
+        const cfg = (body.config && body.config.planilhaEscrita) || (velho.config && velho.config.planilhaEscrita) || null;
+        if (cfg) safe.config.planilhaEscrita = cfg;
+        planilha = await espelhar(velho, safe, cfg);
+      } catch (e) { planilha = { erro: String((e && e.message) || e) }; }
       await kv(['SET', DATA_KEY, JSON.stringify(safe)]);
-      res.status(200).json({ ok: true });
+      res.status(200).json({ ok: true, planilha });
       return;
     }
     res.status(405).json({ error: 'metodo_nao_suportado' });
